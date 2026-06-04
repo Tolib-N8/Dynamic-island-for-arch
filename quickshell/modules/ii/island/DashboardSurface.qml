@@ -72,11 +72,9 @@ FocusScope {
                 anchors.fill: parent
                 visible: surf.currentTab === 0
             }
-            DashboardPlaceholder {
+            KanbanPane {
                 anchors.fill: parent
                 visible: surf.currentTab === 1
-                icon: "view_kanban"
-                label: "Kanban — coming in Phase C"
             }
             DashboardPlaceholder {
                 anchors.fill: parent
