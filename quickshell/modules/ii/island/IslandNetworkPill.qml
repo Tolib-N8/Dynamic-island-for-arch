@@ -61,6 +61,9 @@ Rectangle {
 
         StyledText {
             visible: hover.hovered
+            // Fixed width so the live-changing numbers don't jitter the pill.
+            Layout.preferredWidth: 64
+            horizontalAlignment: Text.AlignRight
             text: `↓ ${root.fmt(root.rxRate)}`
             font.pixelSize: Appearance.font.pixelSize.smaller
             color: IslandStyle.subtextColor
@@ -73,6 +76,8 @@ Rectangle {
         }
         StyledText {
             visible: hover.hovered
+            Layout.preferredWidth: 64
+            horizontalAlignment: Text.AlignLeft
             text: `↑ ${root.fmt(root.txRate)}`
             font.pixelSize: Appearance.font.pixelSize.smaller
             color: IslandStyle.subtextColor
