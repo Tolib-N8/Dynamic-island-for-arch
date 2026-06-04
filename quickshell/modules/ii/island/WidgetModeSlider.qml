@@ -26,10 +26,17 @@ Rectangle {
         return i < 0 ? 1 : i;
     }
     function setMode(key) {
-        root.current = key;
-        Quickshell.execDetached(["powerprofilesctl", "set", key]);
+        root.current = key; // optimistic; reconciled by getProf once set completes
+        setProc.command = ["powerprofilesctl", "set", key];
+        setProc.running = true;
     }
 
+    Process {
+        id: setProc
+        // After setting, re-read the real profile so the slider snaps to actual
+        // state (reverts if the daemon rejected/failed the change).
+        onExited: getProf.running = true
+    }
     Process {
         id: getProf
         command: ["powerprofilesctl", "get"]
