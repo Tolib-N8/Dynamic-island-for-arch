@@ -463,6 +463,8 @@ Scope {
                                 return toolsComp;
                             case "launcher":
                                 return launcherComp;
+                            case "overview":
+                                return overviewComp;
                             default:
                                 return null;
                             }
@@ -472,6 +474,7 @@ Scope {
                     Component { id: powerComp; PowerSurface { focus: true } }
                     Component { id: toolsComp; ToolsSurface { focus: true } }
                     Component { id: launcherComp; LauncherSurface { focus: true } }
+                    Component { id: overviewComp; OverviewSurface { focus: true } }
                 }
             }
         }
