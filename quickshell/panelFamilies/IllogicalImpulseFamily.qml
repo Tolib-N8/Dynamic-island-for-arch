@@ -27,8 +27,6 @@ import qs.modules.ii.wallpaperSelector
 Scope {
     // OpenAgentIsland: full-width Bar disabled in favor of three floating islands.
     // PanelLoader { extraCondition: !Config.options.bar.vertical; component: Bar {} }
-    // Click-catcher FIRST → sits below the islands; click-outside closes open surfaces.
-    PanelLoader { component: IslandClickCatcher {} }
     PanelLoader { component: IslandLeft {} }
     PanelLoader { component: IslandNotch {} }
     PanelLoader { component: IslandRight {} }

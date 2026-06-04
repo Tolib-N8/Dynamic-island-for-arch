@@ -115,11 +115,17 @@ Scope {
                 top: 0
             }
 
-            implicitWidth: root.maxWidth + root.shoulderSize * 2
-            implicitHeight: root.maxHeight
+            // Stays top-anchored (so exclusiveZone is stable — no window reflow),
+            // but grows to cover the whole screen while a surface is open so its
+            // own catcher can receive outside-clicks.
+            implicitWidth: notchWindow.islandState === "open" ? notchWindow.screen.width : root.maxWidth + root.shoulderSize * 2
+            implicitHeight: notchWindow.islandState === "open" ? notchWindow.screen.height : root.maxHeight
+            // Masked to the notch body normally; to the whole (full-screen) window
+            // while open, so outside-clicks reach the catcher below the notch.
             mask: Region {
-                item: notch
+                item: notchWindow.islandState === "open" ? fullMaskItem : notch
             }
+            Item { id: fullMaskItem; anchors.fill: parent }
 
             // --- state machine ---
             property string expandedSource: ""  // transient OSD: volume|brightness|notification|""
@@ -207,6 +213,17 @@ Scope {
             property real targetHeight: islandState === "open" ? (root.surfaceSizes[Island.openSurface]?.h ?? root.maxHeight)
                 : islandState === "expanded" ? (displaySource === "media" ? 40 : 54)
                 : 36
+
+            // Full-screen click-catcher (only while open). Sits BEHIND the notch
+            // body — which absorbs its own clicks — so only clicks OUTSIDE the
+            // notch close the surface. Same window → z-order is guaranteed.
+            MouseArea {
+                anchors.fill: parent
+                enabled: notchWindow.islandState === "open"
+                visible: enabled
+                acceptedButtons: Qt.AllButtons
+                onPressed: Island.close()
+            }
 
             RoundCorner {
                 corner: RoundCorner.CornerEnum.TopRight
