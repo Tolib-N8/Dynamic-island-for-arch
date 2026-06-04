@@ -29,9 +29,19 @@ Scope {
     readonly property int morphDuration: 330
     readonly property int shoulderSize: 20
     readonly property int cornerRadius: 18
-    readonly property int maxWidth: 480
-    readonly property int maxHeight: 300
-    readonly property int reservedStrip: 40   // top space reserved for the island strip
+    readonly property int maxWidth: 1100          // widest open surface (overview) — also sizes the window
+    readonly property int maxHeight: 320
+    readonly property int expandedMaxWidth: 480   // cap for transient OSDs (volume/brightness/media/notif)
+    readonly property int reservedStrip: 40       // top space reserved for the island strip
+
+    // Open-state surface sizes — notch body w×h per named surface (Island.openSurface).
+    readonly property var surfaceSizes: ({
+            "dashboard": { "w": 1000, "h": 290 },
+            "overview":  { "w": 1100, "h": 300 },
+            "launcher":  { "w": 560,  "h": 380 },
+            "power":     { "w": 320,  "h": 92  },
+            "tools":     { "w": 440,  "h": 84  }
+        })
 
     // Media (shared across monitors). Show only while actively playing.
     readonly property var activePlayer: MprisController.activePlayer
@@ -91,6 +101,8 @@ Scope {
 
             WlrLayershell.namespace: "quickshell:islandNotch"
             WlrLayershell.layer: WlrLayer.Top
+            // Grab keyboard only while a surface is open (Esc / tab-nav / search typing).
+            WlrLayershell.keyboardFocus: notchWindow.islandState === "open" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
             color: "transparent"
             // Reserve the top strip so windows open below the island row.
             exclusionMode: ExclusionMode.Normal
@@ -110,10 +122,11 @@ Scope {
             }
 
             // --- state machine ---
-            property bool clickedOpen: false
             property string expandedSource: ""  // transient OSD: volume|brightness|notification|""
             property string displaySource: expandedSource !== "" ? expandedSource : (root.mediaActive ? "media" : "")
-            property string islandState: clickedOpen ? "open" : (displaySource !== "" ? "expanded" : "idle")
+            // open (a named surface is up) outranks transient OSDs, which outrank idle.
+            property string islandState: Island.openSurface !== "" ? "open"
+                : (displaySource !== "" ? "expanded" : "idle")
 
             Timer {
                 id: hideTimer
@@ -188,10 +201,10 @@ Scope {
                     return 0;
                 }
             }
-            property real targetWidth: islandState === "open" ? root.maxWidth
-                : islandState === "expanded" ? Math.min(root.maxWidth, contentWidth + 36)
+            property real targetWidth: islandState === "open" ? (root.surfaceSizes[Island.openSurface]?.w ?? root.maxWidth)
+                : islandState === "expanded" ? Math.min(root.expandedMaxWidth, contentWidth + 36)
                 : 180
-            property real targetHeight: islandState === "open" ? root.maxHeight
+            property real targetHeight: islandState === "open" ? (root.surfaceSizes[Island.openSurface]?.h ?? root.maxHeight)
                 : islandState === "expanded" ? (displaySource === "media" ? 40 : 54)
                 : 36
 
@@ -221,6 +234,7 @@ Scope {
                 height: notchWindow.targetHeight
 
                 color: IslandStyle.pillColor
+                clip: true
                 topLeftRadius: 0
                 topRightRadius: 0
                 bottomLeftRadius: root.cornerRadius
@@ -235,7 +249,15 @@ Scope {
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: notchWindow.clickedOpen = !notchWindow.clickedOpen
+                    // Click the notch body: open the dashboard from idle/OSD, or close
+                    // whatever surface is up (surface content sits on top with its own
+                    // handlers; this catches clicks on the surrounding padding).
+                    onClicked: {
+                        if (Island.openSurface === "")
+                            Island.open("dashboard");
+                        else
+                            Island.close();
+                    }
                 }
 
                 // ---- volume ----
@@ -243,7 +265,7 @@ Scope {
                     id: volumeUI
                     anchors.centerIn: parent
                     spacing: 9
-                    opacity: notchWindow.displaySource === "volume" ? 1 : 0
+                    opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "volume" ? 1 : 0
                     visible: opacity > 0
                     Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
                     MaterialSymbol {
@@ -274,7 +296,7 @@ Scope {
                     id: brightnessUI
                     anchors.centerIn: parent
                     spacing: 9
-                    opacity: notchWindow.displaySource === "brightness" ? 1 : 0
+                    opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "brightness" ? 1 : 0
                     visible: opacity > 0
                     Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
                     MaterialSymbol {
@@ -296,7 +318,7 @@ Scope {
                     id: notifUI
                     anchors.centerIn: parent
                     spacing: 9
-                    opacity: notchWindow.displaySource === "notification" ? 1 : 0
+                    opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "notification" ? 1 : 0
                     visible: opacity > 0
                     Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
                     Loader {
@@ -342,7 +364,7 @@ Scope {
                     id: mediaUI
                     anchors.centerIn: parent
                     spacing: 10
-                    opacity: notchWindow.displaySource === "media" ? 1 : 0
+                    opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "media" ? 1 : 0
                     visible: opacity > 0
                     Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 
@@ -415,6 +437,32 @@ Scope {
                             onClicked: root.activePlayer?.togglePlaying()
                         }
                     }
+                }
+
+                // ---- open-state surface host (dashboard / power / tools / launcher / overview) ----
+                FocusScope {
+                    id: surfaceHost
+                    anchors.fill: parent
+                    visible: notchWindow.islandState === "open"
+                    focus: visible
+                    opacity: visible ? 1 : 0
+                    Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutQuad } }
+
+                    Loader {
+                        id: surfaceLoader
+                        anchors.fill: parent
+                        active: surfaceHost.visible
+                        focus: true
+                        sourceComponent: {
+                            switch (Island.openSurface) {
+                            case "dashboard":
+                                return dashboardComp;
+                            default:
+                                return null;
+                            }
+                        }
+                    }
+                    Component { id: dashboardComp; DashboardSurface { focus: true } }
                 }
             }
         }

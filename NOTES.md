@@ -323,3 +323,56 @@ multiple sessions (count / cycle / stack).
 - **Safety before features in the agent phase.** The timeout/fallback path is built
   and tested before any status rendering, so a broken island can never brick real
   Claude Code.
+
+---
+
+## 3. REFERENCE TECHNIQUE NOTES — expansion features (Hyprfabricated)
+
+Technique-level extract from `~/Projects/island-reference/hyprfabricated/` for the
+ROADMAP A–H expansion. We translate to Quickshell — commands/services below are
+the reusable facts.
+
+**Dashboard tabs** (`modules/dashboard.py`, `widgets.py`, `kanban.py`): a
+`Gtk.Stack` + `StackSwitcher`, slide-left-right 500ms; tabs widgets/pins/kanban/
+wallpapers/mixer (we keep **widgets/kanban/coming-soon** only). Ctrl+Tab /
+Ctrl+Shift+Tab switch. Widgets tab panes: media (MPRIS), calendar (locale +
+datetime, refresh at midnight), notification history, quick-toggles 2×2
+(Network/BT/NightMode/Caffeine), volume+mic sliders (Audio), system-profile
+selector (`powerprofilesctl list/get/set`), live stats (psutil 1s; GPU `nvtop -s`).
+Kanban: 3 cols + DnD (`Gtk.DragAction.MOVE`), JSON at `~/.kanban.json`, inline
+editor (Shift+Enter newline, Return save).
+
+**Power** (`modules/power.py`): Lock `loginctl lock-session`; Suspend
+`systemctl suspend`; Logout `loginctl terminate-user ""`; Reboot `systemctl
+reboot`; Poweroff `systemctl poweroff`. Buttons Tab-navigable, Return/Space fire.
+
+**Capture** (`modules/tools.py` + `scripts/screenshot.sh`): screenshots via
+`hyprshot -z -s -m {output|region|window} -o DIR -f FILE`; clipboard `wl-copy`;
+mockup via ImageMagick `magick`. Record: `gpu-screen-recorder -w screen -ac opus
+-cr full -a default_output -f 60 -o FILE`; state `pgrep -f gpu-screen-recorder`;
+stop = SIGINT. Save `$XDG_PICTURES_DIR/Screenshots`, `$XDG_VIDEOS_DIR/Recordings`.
+(We may substitute `grim`+`slurp`/`wf-recorder` if hyprshot/gpu-screen-recorder
+absent — detect at build.)
+
+**Launcher** (`modules/launcher.py`): apps from `get_desktop_applications()`
+(.desktop), casefold substring on display+name+generic; lazy `idle_add`; arrows
+move, Return `app.launch()`, Esc close, auto-scroll to selection. Prefixes
+`=`/`;`/`:w`/`:d`/`:p`. (Quickshell equiv: `DesktopEntries` service.)
+
+**Overview** (`modules/overview.py`): Hyprland IPC `j/monitors` + `j/clients`
+(JSON); per client address/initialClass/title/workspace/at/size; window button
+icon via DesktopApp/IconResolver; SCALE 0.1 in `Gtk.Fixed`. Left-click
+`focuswindow address:`, right-click `closewindow address:`, DnD →
+`movetoworkspacesilent {wsid},address:{addr}`; rebuild on openwindow/closewindow/
+movewindow. (Quickshell equiv: `Hyprland` service `workspaces`/`toplevels` +
+`Hyprland.dispatch`.)
+
+**Weather** (`modules/weather.py`): location via `https://ipinfo.io/json`, data
+`https://wttr.in/{loc}?format=%c+%t`; poll 600s; threaded fetch; cloud-off icon on
+failure. (We force metric/°C with `&m`.)
+
+**Network** (`modules/metrics.py` NetworkApplet): `psutil.net_io_counters()`
+delta / elapsed, poll 1000ms; format B/s · KB/s · MB/s; Revealer shows speed on
+hover; wifi strength icon. (Quickshell equiv: read `/proc/net/dev`.)
+
+See ROADMAP.md for the phased build plan (A–H) that consumes these.

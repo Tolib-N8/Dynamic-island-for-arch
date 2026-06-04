@@ -14,9 +14,9 @@ Singleton {
     readonly property int hPadding: 10         // inner horizontal padding
     readonly property real radius: Appearance.rounding.full
 
-    // Surface — solid space black (reference pills/notch are opaque black,
+    // Surface — pure pitch black (reference pills/notch are opaque true black,
     // not the translucent themed bar look).
-    readonly property color pillColor: "#0B0B0E"
+    readonly property color pillColor: "#000000"
     readonly property color pillBorder: Appearance.colors.colLayer0Border
     readonly property int borderWidth: 1
 
