@@ -30,6 +30,7 @@ ShellRoot {
         Cliphist.refresh()
         Wallpapers.load()
         Updates.load()
+        AgentService.load()   // start the Claude Code agent bridge listener
     }
 
 

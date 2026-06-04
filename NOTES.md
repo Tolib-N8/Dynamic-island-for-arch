@@ -410,3 +410,44 @@ The notch `open` state is a **named-surface host** (mirrors the reference's
   + `Hyprland.dispatch`. Weather/network pills self-fetch (wttr.in / /proc/net/dev).
 
 See ROADMAP.md for the phase→task breakdown and PROGRESS.md for gotchas.
+
+---
+
+## 5. AGENT BRIDGE (Phase 6 — backend, as-built)
+
+Live Claude Code in the notch + Allow/Deny from the island. Code in `bridge/`
+(hook client + tests) and `quickshell/services/AgentService.qml` (listener).
+
+**Transport:** Unix socket `$XDG_RUNTIME_DIR/openagentisland.sock` (fallback
+`/tmp`). Newline-delimited JSON, one message per connection. Quickshell hosts a
+`SocketServer` (handler = one `Socket` per connection); the hook (`oai_hook.py`)
+is the client. Full schema in `bridge/README.md`.
+
+**Hooks** (`bridge/hooks.settings.json`, NOT yet installed into live
+`~/.claude/settings.json`): status events (SessionStart/UserPromptSubmit/
+PostToolUse/Notification/Stop) call `oai_hook.py status` (fire-and-forget);
+PreToolUse on mutating tools (Bash|Write|Edit|…) calls `oai_hook.py permission`
+(blocking).
+
+**Permission protocol:** hook opens a connection, sends `permission_request`,
+keeps it open, blocks reading for `OAI_PERMISSION_TIMEOUT` (20s). Island shows UI
+(future) / IPC; on decision it `write()`s `permission_decision` back on that same
+connection → hook emits PreToolUse `permissionDecision` allow/deny. Per-connection
+correlation (no id matching needed); `request_id` carried for logging.
+
+**SAFETY (built + proven FIRST, `bridge/test_safety.py` 13/13):** the hook never
+hangs/auto-approves. No socket / refused / timeout / frozen island / exception →
+exit 0, no stdout → Claude falls back to its normal prompt. Island side drops a
+pending request when its connection closes, so a timed-out request can't wedge
+the queue. Verified end-to-end against the REAL Quickshell listener: status
+delivery, allow, deny, and disconnect-cleanup.
+
+**AgentService state:** `sessions` (session_id → {project, cwd, tool, summary,
+lastEvent, status, ts}; status = idle|running|waiting|permission) and
+`pendingPermissions[]`. `allow(reqId)`/`deny(reqId)` write back. IPC target
+`agent` (`status`/`allowOldest`/`denyOldest`) for manual control + testing.
+Forced to instantiate via `AgentService.load()` in `shell.qml`.
+
+**Next:** notch `agent` UI (status + permission Allow/Deny) — waiting on the
+user's visual references. State precedence: agent-permission > agent-status >
+media > volume/brightness > notification > idle.

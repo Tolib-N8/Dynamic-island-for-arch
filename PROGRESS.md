@@ -35,12 +35,38 @@ Right island: power pill → `Island.toggle("power")`; new pencil pill →
 
 All styled via `IslandStyle`. Notch reserves a 40px top strip (`exclusiveZone`).
 
-**NEXT:** user tests A–H visually, then **Phase 6 agent bridge** (live Claude Code
-status in the notch + permission round-trip).
+**Phase 6 agent bridge — BACKEND DONE & proven (2026-06-05).** Safety-first hook
+(`bridge/oai_hook.py`) + Quickshell listener (`services/AgentService.qml`,
+`SocketServer`) over `$XDG_RUNTIME_DIR/openagentisland.sock`. `test_safety.py`
+13/13; verified end-to-end through real Quickshell (status delivery, allow, deny,
+disconnect-cleanup) via the `agent` IPC target. Hooks NOT yet installed into live
+`~/.claude/settings.json` (snippet in `bridge/hooks.settings.json`).
+
+**NEXT:** the notch `agent` UI (status + Allow/Deny) — waiting on the user's
+visual references. Then install hooks + test with a real Claude Code session,
+then Phase 8 (multi-session polish).
 
 ---
 
 ## Done (newest first)
+
+- **2026-06-05 — Phase 6 agent bridge BACKEND (safety-first).** Built the riskiest
+  piece first and proved it before any UI. `bridge/oai_hook.py` (Python — no
+  socat/nc on this box) forwards Claude Code hook events to a unix socket; for
+  PreToolUse it blocks for an Allow/Deny decision with a hard timeout. **Safety
+  contract:** any failure (no socket / refused / timeout / frozen / exception) →
+  exit 0, no stdout → Claude falls back to its normal prompt; never hangs, never
+  auto-approves. `bridge/test_safety.py` proves it (13/13: down, allow, deny,
+  frozen→bounded fallback, delivery). Quickshell side `services/AgentService.qml`
+  hosts a `SocketServer`, keeps per-session status + a pending-permission queue,
+  writes decisions back on the held connection, and drops a pending request if
+  its connection closes (queue can't wedge). Verified END-TO-END through the real
+  Quickshell listener: status events received with correct project/tool/summary;
+  full allow + deny round-trip via the `agent` IPC target; disconnect cleanup.
+  Gotchas: Quickshell `SocketServer.handler` is a `QQmlComponent` (one `Socket`
+  per connection); `Socket` has `write()`/`flush()`/`connected`; new singleton
+  needed a fresh `qs` start to register (imported-module quirk) — socket appeared
+  after restart. Hooks documented but NOT yet wired into live `~/.claude/`.
 
 - **2026-06-05 — Expansion phases A–H (notch surfaces + side islands).** Built the
   whole reference feature set ahead of the agent work; each phase compiled clean
