@@ -115,11 +115,13 @@ Scope {
                 top: 0
             }
 
-            // Stays top-anchored (so exclusiveZone is stable — no window reflow),
-            // but grows to cover the whole screen while a surface is open so its
-            // own catcher can receive outside-clicks.
-            implicitWidth: notchWindow.islandState === "open" ? notchWindow.screen.width : root.maxWidth + root.shoulderSize * 2
-            implicitHeight: notchWindow.islandState === "open" ? notchWindow.screen.height : root.maxHeight
+            // ALWAYS screen-sized + top-anchored so the window never resizes or
+            // re-centers (that caused the notch to slide horizontally). It's
+            // transparent and masked to just the notch body when idle (everything
+            // else click-through); masked to the whole window while open so its
+            // catcher can receive outside-clicks. exclusiveZone stays a stable 40.
+            implicitWidth: notchWindow.screen.width
+            implicitHeight: notchWindow.screen.height
             // Masked to the notch body normally; to the whole (full-screen) window
             // while open, so outside-clicks reach the catcher below the notch.
             mask: Region {
