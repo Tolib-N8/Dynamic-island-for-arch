@@ -107,35 +107,6 @@ Item {
         }
     }
 
-    component VBar: ColumnLayout {
-        id: vb
-        property real value: 0
-        property string label: ""
-        property color barColor: IslandStyle.accent
-        spacing: 3
-        Item {
-            Layout.fillHeight: true
-            Layout.preferredWidth: 16
-            Layout.alignment: Qt.AlignHCenter
-            Rectangle { anchors.fill: parent; radius: 5; color: Qt.rgba(1, 1, 1, 0.08) }
-            Rectangle {
-                anchors.bottom: parent.bottom
-                anchors.left: parent.left
-                anchors.right: parent.right
-                radius: 5
-                height: parent.height * Math.max(0.03, Math.min(1, vb.value))
-                color: vb.barColor
-                Behavior on height { NumberAnimation { duration: 280; easing.type: Easing.OutQuad } }
-            }
-        }
-        StyledText {
-            Layout.alignment: Qt.AlignHCenter
-            text: vb.label
-            font.pixelSize: Appearance.font.pixelSize.smaller
-            color: IslandStyle.subtextColor
-        }
-    }
-
     // ---------- layout ----------
     RowLayout {
         anchors.fill: parent
@@ -393,72 +364,10 @@ Item {
             }
         }
 
-        // === Right column: power-profile selector + live stat bars ===
-        ColumnLayout {
-            Layout.preferredWidth: 150
+        // === Right column: vertical power-profile slider (Saver↔Normal↔Performance) ===
+        WidgetModeSlider {
+            Layout.preferredWidth: 170
             Layout.fillHeight: true
-            spacing: 8
-
-            ColumnLayout {
-                id: modeSel
-                Layout.fillWidth: true
-                spacing: 5
-                property string current: "balanced"
-                readonly property var modes: [
-                    { "key": "power-saver", "icon": "energy_savings_leaf", "label": "Saver" },
-                    { "key": "balanced", "icon": "balance", "label": "Normal" },
-                    { "key": "performance", "icon": "rocket_launch", "label": "Performance" }
-                ]
-                Process {
-                    id: getProf
-                    command: ["powerprofilesctl", "get"]
-                    stdout: SplitParser { onRead: d => modeSel.current = d.trim() }
-                }
-                Component.onCompleted: getProf.running = true
-                Repeater {
-                    model: modeSel.modes
-                    delegate: Rectangle {
-                        required property var modelData
-                        Layout.fillWidth: true
-                        implicitHeight: 30
-                        radius: 8
-                        readonly property bool sel: modeSel.current === modelData.key
-                        color: sel ? Qt.rgba(0.54, 0.70, 0.97, 0.18) : Qt.rgba(1, 1, 1, 0.05)
-                        border.width: 1
-                        border.color: sel ? Qt.rgba(0.54, 0.70, 0.97, 0.5) : "transparent"
-                        Behavior on color { ColorAnimation { duration: 120 } }
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 9
-                            spacing: 7
-                            MaterialSymbol { text: modelData.icon; iconSize: 15; color: parent.parent.sel ? IslandStyle.accent : IslandStyle.textColor }
-                            StyledText { text: modelData.label; font.pixelSize: Appearance.font.pixelSize.smaller; color: IslandStyle.textColor }
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: {
-                                modeSel.current = modelData.key;
-                                Quickshell.execDetached(["powerprofilesctl", "set", modelData.key]);
-                            }
-                        }
-                    }
-                }
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                radius: 14
-                color: Qt.rgba(1, 1, 1, 0.05)
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: 10
-                    spacing: 10
-                    VBar { value: ResourceUsage.cpuUsage; label: "CPU"; barColor: IslandStyle.accent }
-                    VBar { value: ResourceUsage.memoryUsedPercentage; label: "RAM"; barColor: "#A0E7A0" }
-                    VBar { value: ResourceUsage.swapUsedPercentage; label: "SWP"; barColor: "#E7C0A0" }
-                }
-            }
         }
     }
 }
