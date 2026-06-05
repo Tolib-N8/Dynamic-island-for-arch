@@ -131,7 +131,11 @@ Scope {
 
             // --- state machine ---
             property string expandedSource: ""  // transient OSD: volume|brightness|notification|""
-            property string displaySource: expandedSource !== "" ? expandedSource : (root.mediaActive ? "media" : "")
+            // Agent-forward: an active agent outranks media for the notch display
+            // (precedence: transient OSD > agent > media). Music keeps playing.
+            property string displaySource: expandedSource !== "" ? expandedSource
+                : (AgentService.active ? "agent"
+                : (root.mediaActive ? "media" : ""))
             // open (a named surface is up) outranks transient OSDs, which outrank idle.
             property string islandState: Island.openSurface !== "" ? "open"
                 : (displaySource !== "" ? "expanded" : "idle")
@@ -205,6 +209,8 @@ Scope {
                     return notifUI.implicitWidth;
                 case "media":
                     return mediaUI.implicitWidth;
+                case "agent":
+                    return agentUI.implicitWidth;
                 default:
                     return 0;
                 }
@@ -213,7 +219,7 @@ Scope {
                 : islandState === "expanded" ? Math.min(root.expandedMaxWidth, contentWidth + 36)
                 : 180
             property real targetHeight: islandState === "open" ? (root.surfaceSizes[Island.openSurface]?.h ?? root.maxHeight)
-                : islandState === "expanded" ? (displaySource === "media" ? 40 : 54)
+                : islandState === "expanded" ? (displaySource === "media" || displaySource === "agent" ? 40 : 54)
                 : 36
 
             // Full-screen click-catcher (only while open). Sits BEHIND the notch
@@ -453,6 +459,34 @@ Scope {
                             anchors.fill: parent
                             onClicked: root.activePlayer?.togglePlaying()
                         }
+                    }
+                }
+
+                // ---- agent (compact): pixel mascot + status ----
+                RowLayout {
+                    id: agentUI
+                    anchors.centerIn: parent
+                    spacing: 9
+                    opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "agent" ? 1 : 0
+                    visible: opacity > 0
+                    Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+                    AgentSpinner {
+                        Layout.alignment: Qt.AlignVCenter
+                        mode: AgentService.headlineMode === "" ? "idle" : AgentService.headlineMode
+                        pixel: 2
+                    }
+                    StyledText {
+                        Layout.alignment: Qt.AlignVCenter
+                        text: {
+                            const m = AgentService.headlineMode;
+                            const proj = AgentService.headlineSession?.project ?? "";
+                            let t = m === "permission" ? "Needs you" : m === "waiting" ? "Waiting…" : (proj.length > 0 ? proj : "Working…");
+                            if (AgentService.sessionCount > 1)
+                                t += "  ·  " + AgentService.sessionCount;
+                            return t;
+                        }
+                        color: IslandStyle.textColor
+                        font.pixelSize: Appearance.font.pixelSize.small
                     }
                 }
 

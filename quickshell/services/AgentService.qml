@@ -30,6 +30,42 @@ Singleton {
     property var _sessionBypass: ({})  // session_id → true (Bypass: allow ALL tools)
     property var _toolAllow: ({})       // "session|tool" → true (Allow All: this tool)
 
+    // --- derived: what the compact notch shows (most-urgent session) ---
+    readonly property var sessionList: {
+        const out = [];
+        for (const k in root.sessions)
+            out.push(Object.assign({ "id": k }, root.sessions[k]));
+        return out;
+    }
+    readonly property int sessionCount: root.sessionList.length
+    readonly property string headlineMode: {
+        if (root.pendingPermissions.length > 0)
+            return "permission";
+        let m = "";
+        for (let i = 0; i < root.sessionList.length; i++) {
+            const s = root.sessionList[i];
+            if (s.status === "waiting")
+                return "waiting";
+            if (s.status === "working")
+                m = "working";
+        }
+        return m;
+    }
+    readonly property var headlineSession: {
+        if (root.pendingPermissions.length > 0) {
+            const sid = root.pendingPermissions[0].session_id;
+            return root.sessions[sid] ? Object.assign({ "id": sid }, root.sessions[sid]) : null;
+        }
+        for (let i = 0; i < root.sessionList.length; i++)
+            if (root.sessionList[i].status === "waiting")
+                return root.sessionList[i];
+        for (let i = 0; i < root.sessionList.length; i++)
+            if (root.sessionList[i].status === "working")
+                return root.sessionList[i];
+        return null;
+    }
+    readonly property bool active: root.headlineMode !== ""
+
     // no-op so shell.qml can force-instantiate this singleton (→ server goes active)
     function load() {}
 
