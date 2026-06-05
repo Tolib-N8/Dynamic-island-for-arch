@@ -169,8 +169,20 @@ Singleton {
     }
 
     function dropPending(reqId) {
+        const p = root.pendingPermissions.find(x => x.request_id === reqId);
         delete root._conns[reqId];
-        root.pendingPermissions = root.pendingPermissions.filter(p => p.request_id !== reqId);
+        root.pendingPermissions = root.pendingPermissions.filter(x => x.request_id !== reqId);
+        // The request is gone (decided or timed out) — don't leave the session
+        // stuck showing "permission"; revert it to working.
+        if (p) {
+            const sid = p.session_id || "default";
+            const prev = root.sessions[sid];
+            if (prev && prev.status === "permission") {
+                const next = Object.assign({}, root.sessions);
+                next[sid] = Object.assign({}, prev, { "status": "working" });
+                root.sessions = next;
+            }
+        }
     }
 
     function decide(reqId, decision, reason) {
