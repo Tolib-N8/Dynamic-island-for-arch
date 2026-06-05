@@ -7,56 +7,18 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
-**Phases 0–5 DONE. Expansion phases A–H DONE (2026-06-05) — code-complete &
-compiling clean; awaiting user visual test in the nested window. Next: Phase 6 —
-agent bridge.**
+**PROJECT FEATURE-COMPLETE & LIVE (2026-06-06).** Three floating islands + morphing
+notch on end-4/Quickshell; all dashboard surfaces (Widgets/Kanban/power/tools/
+launcher/overview); weather+network pills. The headline feature — live Claude Code
+agent status + permission Allow/Deny from the notch — is built, safety-proven
+(13/13, never hangs Claude), validated on a real `claude` session, fully polished
+(mascot personalities, multi-session, Done state, media coexistence, card peek/
+drag-scroll/flash/toast, ghost-prune, relative time), and **the hooks are now
+ENABLED GLOBALLY** in ~/.claude/settings.json via `bridge/install-hooks.py enable`
+(reversible: `disable`). User still merges to the live `ii` config themselves.
 
-The notch `open` state is now a **surface host** (see NOTES.md): an `Island`
-singleton holds `openSurface` and side-island pills command the centre notch to
-open one of 5 surfaces — `dashboard` (Widgets/Kanban/Coming-soon tabs), `power`,
-`tools`, `launcher`, `overview`. Built in ROADMAP.md phases A–H:
-- **A** surface host + dashboard tab shell (Ctrl+Tab nav, per-surface sizes).
-- **B** Widgets tab: media card, Wi-Fi/BT/Night/Caffeine toggles, vol+mic
-  sliders, calendar, notifications, power-profile selector, live CPU/RAM/Swap bars.
-- **C** Kanban tab (3 cols, JSON-persisted, inline edit, drag between columns).
-- **D** Power surface (Lock/Night/Logout/Reboot/Shutdown, kbd+mouse). USECASE 1.
-- **E** Tools surface (region/full/window screenshot via hyprshot, record via
-  wf-recorder, hyprpicker). USECASE 2.
-- **F** Launcher surface (AppSearch fuzzy apps+settings, kbd nav). USECASE 4.
-- **G** Overview surface (live WS 1-10 icon grid, click focus / RMB close / drag
-  to move via vanilla Hyprland dispatchers). USECASE 4.
-- **H** Left island rebuilt to 5 pills (search · workspaces · weather · overview ·
-  network), title dropped; weather pill (wttr.in °C) + network pill (/proc/net/dev
-  hover throughput). Pill bg → pure pitch black. Click-absorber so open surfaces
-  don't close on inner clicks (close via Esc / re-click trigger pill).
-
-Right island: power pill → `Island.toggle("power")`; new pencil pill →
-`Island.toggle("tools")`.
-
-All styled via `IslandStyle`. Notch reserves a 40px top strip (`exclusiveZone`).
-
-**Phase 6 agent bridge — BACKEND DONE & proven (2026-06-05).** Safety-first hook
-(`bridge/oai_hook.py`) + Quickshell listener (`services/AgentService.qml`,
-`SocketServer`) over `$XDG_RUNTIME_DIR/openagentisland.sock`. `test_safety.py`
-13/13; verified end-to-end through real Quickshell (status delivery, allow, deny,
-disconnect-cleanup) via the `agent` IPC target. Hooks NOT yet installed into live
-`~/.claude/settings.json` (snippet in `bridge/hooks.settings.json`).
-
-**Phase 7 in progress.** Design signed off (see `AGENT_UI.md`): agent-forward
-precedence, 4 permission buttons (Deny/Allow Once/Allow All/Bypass), faithful
-pixel mascot, jump skipped. Backend data contract DONE & proven: hook sends a
-rich `preview` (write/edit/bash); AgentService has 4-way decisions + island-side
-Allow-All/Bypass auto-rules (tool-scoped). **Phase 6 + 7 DONE & VALIDATED WITH A REAL CLAUDE CODE SESSION (2026-06-06).**
-The headline feature works end-to-end: a real `claude` session (in the isolated
-`~/agent-island-test/` sandbox with project-level hooks) lit up the notch —
-Working… → orange permission card with the file preview → approved from the
-island → Claude Code wrote the file and continued. Compact State 2 (pixel mascot
-running cycle, shimmer/dots status, DI spread, auto-collapse) + State 3 surface
-(session list + permission card, Deny/Allow Once/Allow All/Bypass, auto-open on
-permission, stale-status revert) all user-approved.
-**NEXT — Phase 8:** multiple concurrent sessions (queue + list), a brief 'Done'
-state, optional media side-indicator coexistence, turn OFF debug logging,
-multi-monitor check; then decide on enabling hooks for real day-to-day use.
+Toggle the island for real Claude work:
+  python3 ~/Projects/openagentisland/bridge/install-hooks.py enable|disable|status
 
 ---
 
