@@ -30,7 +30,7 @@ FocusScope {
     function relTime(ts) {
         if (!ts)
             return "";
-        const age = Math.max(0, Math.floor(DateTime.clock.date.getTime() / 1000 - ts));
+        const age = Math.max(0, Math.floor(AgentService.now - ts));  // AgentService.now ticks every 1s
         if (age < 60) return age + "s";
         if (age < 3600) return Math.floor(age / 60) + "m";
         if (age < 86400) return Math.floor(age / 3600) + "h";

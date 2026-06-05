@@ -123,6 +123,7 @@ Singleton {
     // Prune finished sessions a few seconds after Stop so the notch returns to
     // State 1 (base) when nothing is running. Tick-based to avoid Date.
     property int _tick: 0
+    property double now: Math.floor(Date.now() / 1000)  // live epoch seconds (for relative time)
     readonly property int _doneLingerTicks: 5     // finished session lingers ~5s then collapses
     readonly property int _stalenessTicks: 300    // no events for ~5 min → ghost session, prune
     Timer {
@@ -131,6 +132,7 @@ Singleton {
         repeat: true
         onTriggered: {
             root._tick++;
+            root.now = Math.floor(Date.now() / 1000);
             let changed = false;
             const next = Object.assign({}, root.sessions);
             for (const k in next) {
