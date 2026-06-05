@@ -169,15 +169,18 @@ FocusScope {
                                 StyledText { id: nf; anchors.centerIn: parent; text: "new file"; font.pixelSize: Appearance.font.pixelSize.smaller; color: surf.cGreen }
                             }
                         }
-                        ScrollView {
-                            id: previewScroll
+                        Flickable {
+                            id: pflick
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             clip: true
-                            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                            contentWidth: width
+                            contentHeight: bodyText.implicitHeight
+                            boundsBehavior: Flickable.StopAtBounds
+                            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
                             StyledText {
-                                width: previewScroll.availableWidth
+                                id: bodyText
+                                width: pflick.width
                                 text: {
                                     const k = card.preview?.kind ?? "generic";
                                     if (k === "bash") return "$ " + (card.preview?.command ?? "");
@@ -189,6 +192,13 @@ FocusScope {
                                 font.pixelSize: Appearance.font.pixelSize.smaller
                                 color: IslandStyle.subtextColor
                                 wrapMode: Text.Wrap
+                            }
+                            // explicit wheel — both directions, bypassing the flick physics
+                            WheelHandler {
+                                onWheel: e => {
+                                    const max = Math.max(0, pflick.contentHeight - pflick.height);
+                                    pflick.contentY = Math.max(0, Math.min(max, pflick.contentY - e.angleDelta.y));
+                                }
                             }
                         }
                     }
