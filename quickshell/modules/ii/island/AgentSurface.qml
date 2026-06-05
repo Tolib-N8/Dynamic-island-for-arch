@@ -169,18 +169,18 @@ FocusScope {
                                 StyledText { id: nf; anchors.centerIn: parent; text: "new file"; font.pixelSize: Appearance.font.pixelSize.smaller; color: surf.cGreen }
                             }
                         }
-                        Flickable {
-                            id: pflick
+                        Item {
+                            id: pview
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             clip: true
-                            contentWidth: width
-                            contentHeight: bodyText.implicitHeight
-                            boundsBehavior: Flickable.StopAtBounds
-                            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                            property real scrollY: 0
+                            readonly property real maxScroll: Math.max(0, bodyText.implicitHeight - height)
+                            onMaxScrollChanged: scrollY = Math.min(scrollY, maxScroll)
                             StyledText {
                                 id: bodyText
-                                width: pflick.width
+                                width: pview.width - 6
+                                y: -pview.scrollY
                                 text: {
                                     const k = card.preview?.kind ?? "generic";
                                     if (k === "bash") return "$ " + (card.preview?.command ?? "");
@@ -193,12 +193,21 @@ FocusScope {
                                 color: IslandStyle.subtextColor
                                 wrapMode: Text.Wrap
                             }
-                            // explicit wheel — both directions, bypassing the flick physics
-                            WheelHandler {
-                                onWheel: e => {
-                                    const max = Math.max(0, pflick.contentHeight - pflick.height);
-                                    pflick.contentY = Math.max(0, Math.min(max, pflick.contentY - e.angleDelta.y));
+                            MouseArea {
+                                anchors.fill: parent
+                                onWheel: wheel => {
+                                    pview.scrollY = Math.max(0, Math.min(pview.maxScroll, pview.scrollY - wheel.angleDelta.y * 0.6));
                                 }
+                            }
+                            // scrollbar indicator
+                            Rectangle {
+                                visible: pview.maxScroll > 0
+                                anchors.right: parent.right
+                                width: 3
+                                radius: 1.5
+                                color: Qt.rgba(1, 1, 1, 0.22)
+                                height: Math.max(18, pview.height * (pview.height / Math.max(1, bodyText.implicitHeight)))
+                                y: pview.maxScroll > 0 ? (pview.scrollY / pview.maxScroll) * (pview.height - height) : 0
                             }
                         }
                     }
