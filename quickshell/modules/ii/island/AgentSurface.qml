@@ -15,8 +15,19 @@ FocusScope {
 
     readonly property color cOrange: "#E8A23D"
     readonly property color cGreen: "#7EE787"
+    readonly property color cBlue: "#7AA2F7"
     readonly property color cRed: "#E05561"
     readonly property bool hasPermission: AgentService.pendingPermissions.length > 0
+    property string expandedId: ""  // "" → the first (most-urgent) row is expanded
+
+    function statusLabel(s) {
+        return s === "working" ? "Working…" : s === "waiting" ? "Waiting for input"
+             : s === "permission" ? "Needs approval" : s === "done" ? "Done" : "Idle";
+    }
+    function statusColor(s) {
+        return s === "permission" || s === "waiting" ? surf.cOrange
+             : s === "working" ? surf.cBlue : s === "done" ? surf.cGreen : IslandStyle.subtextColor;
+    }
 
     // small rounded chip ("Claude")
     component Chip: Rectangle {
@@ -243,55 +254,81 @@ FocusScope {
                 spacing: 4
                 model: AgentService.sessionList
                 delegate: Rectangle {
+                    id: srow
                     required property var modelData
+                    required property int index
                     width: ListView.view.width
-                    implicitHeight: 46
+                    readonly property bool expanded: surf.expandedId !== "" ? (surf.expandedId === srow.modelData.id) : (srow.index === 0)
+                    implicitHeight: srowCol.implicitHeight + 16
                     radius: 10
-                    color: rowHover.hovered ? Qt.rgba(1, 1, 1, 0.06) : Qt.rgba(1, 1, 1, 0.03)
-                    HoverHandler { id: rowHover }
-                    RowLayout {
-                        anchors.fill: parent
+                    color: srow.expanded ? Qt.rgba(1, 1, 1, 0.07)
+                         : srowHover.hovered ? Qt.rgba(1, 1, 1, 0.05)
+                         : Qt.rgba(1, 1, 1, 0.03)
+                    Behavior on implicitHeight { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+                    HoverHandler { id: srowHover }
+
+                    ColumnLayout {
+                        id: srowCol
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
                         anchors.leftMargin: 12
                         anchors.rightMargin: 12
-                        spacing: 10
-                        Rectangle {
-                            Layout.alignment: Qt.AlignVCenter
-                            implicitWidth: 9
-                            implicitHeight: 9
-                            radius: 4.5
-                            color: modelData.status === "permission" ? surf.cOrange
-                                 : modelData.status === "waiting" ? surf.cOrange
-                                 : modelData.status === "working" ? "#7AA2F7"
-                                 : modelData.status === "done" ? surf.cGreen
-                                 : IslandStyle.subtextColor
-                        }
-                        ColumnLayout {
+                        anchors.topMargin: 8
+                        spacing: 3
+
+                        RowLayout {
                             Layout.fillWidth: true
-                            spacing: -1
+                            spacing: 10
+                            Rectangle {
+                                Layout.alignment: Qt.AlignVCenter
+                                implicitWidth: 9
+                                implicitHeight: 9
+                                radius: 4.5
+                                color: surf.statusColor(srow.modelData.status)
+                            }
                             StyledText {
                                 Layout.fillWidth: true
-                                text: (modelData.project || "session") + (modelData.summary ? "  ·  " + modelData.summary : "")
+                                text: (srow.modelData.project || "session") + (srow.modelData.summary ? "  ·  " + srow.modelData.summary : "")
                                 font.pixelSize: Appearance.font.pixelSize.small
                                 font.weight: Font.DemiBold
                                 color: IslandStyle.textColor
                                 elide: Text.ElideRight
                             }
+                            Chip { Layout.alignment: Qt.AlignVCenter; label: "Claude" }
+                            StyledText {
+                                Layout.alignment: Qt.AlignVCenter
+                                text: srow.modelData.status
+                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                color: surf.statusColor(srow.modelData.status)
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.leftMargin: 19
+                            visible: srow.expanded
+                            spacing: 1
                             StyledText {
                                 Layout.fillWidth: true
-                                visible: (modelData.message || "") !== ""
-                                text: "You: " + modelData.message
+                                visible: (srow.modelData.message || "") !== ""
+                                text: "You: " + srow.modelData.message
                                 font.pixelSize: Appearance.font.pixelSize.smaller
                                 color: IslandStyle.subtextColor
                                 elide: Text.ElideRight
                             }
+                            StyledText {
+                                Layout.fillWidth: true
+                                text: surf.statusLabel(srow.modelData.status)
+                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                color: surf.statusColor(srow.modelData.status)
+                            }
                         }
-                        Chip { Layout.alignment: Qt.AlignVCenter; label: "Claude" }
-                        StyledText {
-                            Layout.alignment: Qt.AlignVCenter
-                            text: modelData.status
-                            font.pixelSize: Appearance.font.pixelSize.smaller
-                            color: IslandStyle.subtextColor
-                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: surf.expandedId = srow.modelData.id
                     }
                 }
             }
