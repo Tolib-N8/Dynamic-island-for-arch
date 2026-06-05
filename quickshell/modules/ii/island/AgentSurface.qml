@@ -79,12 +79,23 @@ FocusScope {
     Component {
         id: permComp
         Item {
+            id: card
             anchors.fill: parent
             readonly property var p: AgentService.pendingPermissions[0] ?? null
             readonly property var sess: p ? (AgentService.sessions[p.session_id] ?? null) : null
             readonly property var preview: p?.preview ?? null
             property bool confirmingBypass: false
             Timer { id: bypassTimer; interval: 2500; onTriggered: confirmingBypass = false }
+
+            // entrance: slide up + fade in
+            opacity: 0
+            transform: Translate { id: cardTr; y: 16 }
+            Component.onCompleted: cardIn.start()
+            ParallelAnimation {
+                id: cardIn
+                NumberAnimation { target: card; property: "opacity"; to: 1; duration: 200; easing.type: Easing.OutCubic }
+                NumberAnimation { target: cardTr; property: "y"; to: 0; duration: 300; easing.type: Easing.OutBack; easing.overshoot: 1.1 }
+            }
 
             ColumnLayout {
                 anchors.fill: parent
