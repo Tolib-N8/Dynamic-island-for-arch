@@ -44,7 +44,9 @@ FocusScope {
     }
     function pick() {
         Island.close();
-        Quickshell.execDetached(["bash", "-c", "hyprpicker -a"]);
+        // pipe the picked hex straight to the clipboard (hyprpicker -a autocopy is
+        // unreliable); strip whitespace so only the hex lands on the clipboard.
+        Quickshell.execDetached(["bash", "-c", "hyprpicker -f hex | tr -d '[:space:]' | wl-copy"]);
     }
 
     Keys.onEscapePressed: Island.close()
