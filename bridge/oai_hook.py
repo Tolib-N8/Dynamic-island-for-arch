@@ -55,13 +55,16 @@ def connect(timeout):
 
 def summarize(payload):
     tool = payload.get("tool_name", "")
+    if not tool:
+        return ""  # non-tool events (prompt/notification/stop) have no action
     ti = payload.get("tool_input", {}) or {}
     if tool == "Bash":
         return str(ti.get("command", ""))[:300]
     if tool in ("Edit", "Write", "Read", "NotebookEdit"):
         return str(ti.get("file_path", ""))
     try:
-        return json.dumps(ti)[:200]
+        s = json.dumps(ti)
+        return "" if s == "{}" else s[:200]
     except Exception:
         return ""
 

@@ -20,6 +20,10 @@ FocusScope {
     readonly property bool hasPermission: AgentService.pendingPermissions.length > 0
     property string expandedId: ""  // "" → the first (most-urgent) row is expanded
 
+    function title(project, summary) {
+        const s = (summary && summary !== "{}") ? summary : "";
+        return (project || "session") + (s ? "  ·  " + s : "");
+    }
     function statusLabel(s) {
         return s === "working" ? "Working…" : s === "waiting" ? "Waiting for input"
              : s === "permission" ? "Needs approval" : s === "done" ? "Done" : "Idle";
@@ -97,7 +101,7 @@ FocusScope {
                         spacing: -1
                         StyledText {
                             Layout.fillWidth: true
-                            text: (p?.project ?? "") + (sess?.summary ? "  ·  " + sess.summary : "")
+                            text: surf.title(p?.project ?? "", sess?.summary ?? "")
                             font.pixelSize: Appearance.font.pixelSize.small
                             font.weight: Font.DemiBold
                             color: IslandStyle.textColor
@@ -289,7 +293,7 @@ FocusScope {
                             }
                             StyledText {
                                 Layout.fillWidth: true
-                                text: (srow.modelData.project || "session") + (srow.modelData.summary ? "  ·  " + srow.modelData.summary : "")
+                                text: surf.title(srow.modelData.project, srow.modelData.summary)
                                 font.pixelSize: Appearance.font.pixelSize.small
                                 font.weight: Font.DemiBold
                                 color: IslandStyle.textColor
