@@ -40,7 +40,8 @@ Scope {
             "overview":  { "w": 1100, "h": 300 },
             "launcher":  { "w": 560,  "h": 380 },
             "power":     { "w": 320,  "h": 92  },
-            "tools":     { "w": 440,  "h": 84  }
+            "tools":     { "w": 440,  "h": 84  },
+            "agent":     { "w": 460,  "h": 300 }
         })
 
     // Media (shared across monitors). Show only while actively playing.
@@ -88,6 +89,19 @@ Scope {
             onRead: data => {
                 root.visualizerPoints = data.split(";").map(p => parseFloat(p.trim())).filter(p => !isNaN(p));
             }
+        }
+    }
+
+    // Permission is top-priority + sticky: auto-open the agent surface when a
+    // request arrives (if nothing else is open), and close back to compact when
+    // the last one is resolved.
+    Connections {
+        target: AgentService
+        function onPendingPermissionsChanged() {
+            if (AgentService.pendingPermissions.length > 0 && Island.openSurface === "")
+                Island.open("agent");
+            else if (AgentService.pendingPermissions.length === 0 && Island.openSurface === "agent")
+                Island.close();
         }
     }
 
@@ -279,7 +293,7 @@ Scope {
                     // accidental close); close via Esc or re-clicking the trigger pill.
                     onClicked: {
                         if (Island.openSurface === "")
-                            Island.open("dashboard");
+                            Island.open(notchWindow.displaySource === "agent" ? "agent" : "dashboard");
                     }
                 }
 
@@ -535,6 +549,8 @@ Scope {
                                 return launcherComp;
                             case "overview":
                                 return overviewComp;
+                            case "agent":
+                                return agentComp;
                             default:
                                 return null;
                             }
@@ -545,6 +561,7 @@ Scope {
                     Component { id: toolsComp; ToolsSurface { focus: true } }
                     Component { id: launcherComp; LauncherSurface { focus: true } }
                     Component { id: overviewComp; OverviewSurface { focus: true } }
+                    Component { id: agentComp; AgentSurface { focus: true } }
                 }
             }
         }

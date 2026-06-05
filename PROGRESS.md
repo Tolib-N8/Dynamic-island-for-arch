@@ -46,9 +46,11 @@ disconnect-cleanup) via the `agent` IPC target. Hooks NOT yet installed into liv
 precedence, 4 permission buttons (Deny/Allow Once/Allow All/Bypass), faithful
 pixel mascot, jump skipped. Backend data contract DONE & proven: hook sends a
 rich `preview` (write/edit/bash); AgentService has 4-way decisions + island-side
-Allow-All/Bypass auto-rules (tool-scoped). **NEXT (visual):** pixel mascot/spinner
-→ compact agent notch state → session-list surface → permission surface → wire
-precedence → install hooks + real-session test.
+Allow-All/Bypass auto-rules (tool-scoped). Compact agent State 2 DONE & user-approved (pixel mascot running cycle, animated
+shimmer/dots status text, Dynamic-Island spread, auto-collapse to State 1).
+**NEXT:** State 3 surface (session list + orange permission card with preview +
+Deny/Allow Once/Allow All/Bypass), click + auto-open-on-permission, then install
+hooks + real-session test.
 
 ---
 
