@@ -4,6 +4,7 @@ import qs.modules.common
 import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 
 // State-3 agent surface (click-to-open). Shows the orange PERMISSION CARD when a
 // request is pending (tool + preview + Deny/Allow Once/Allow All/Bypass), else
@@ -19,6 +20,8 @@ FocusScope {
     readonly property color cRed: "#E05561"
     readonly property bool hasPermission: AgentService.pendingPermissions.length > 0
     property string expandedId: ""  // "" → the first (most-urgent) row is expanded
+    property bool viewList: false   // peek the list while a permission is pending
+    onHasPermissionChanged: if (hasPermission) surf.viewList = false  // new permission → show the card
 
     function title(project, summary) {
         const s = (summary && summary !== "{}") ? summary : "";
@@ -72,7 +75,7 @@ FocusScope {
 
     Loader {
         anchors.fill: parent
-        sourceComponent: surf.hasPermission ? permComp : listComp
+        sourceComponent: (surf.hasPermission && !surf.viewList) ? permComp : listComp
     }
 
     // ===================== PERMISSION CARD =====================
@@ -120,8 +123,8 @@ FocusScope {
                         }
                         StyledText {
                             Layout.fillWidth: true
-                            visible: sess?.message ? true : false
-                            text: "You: " + (sess?.message ?? "")
+                            visible: (sess?.prompt ?? "") !== ""
+                            text: "You: " + (sess?.prompt ?? "")
                             font.pixelSize: Appearance.font.pixelSize.smaller
                             color: IslandStyle.subtextColor
                             elide: Text.ElideRight
@@ -166,21 +169,29 @@ FocusScope {
                                 StyledText { id: nf; anchors.centerIn: parent; text: "new file"; font.pixelSize: Appearance.font.pixelSize.smaller; color: surf.cGreen }
                             }
                         }
-                        StyledText {
+                        Flickable {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
-                            text: {
-                                const k = preview?.kind ?? "generic";
-                                if (k === "bash") return "$ " + (preview?.command ?? "");
-                                if (k === "write") return preview?.body ?? "";
-                                if (k === "edit") return (preview?.old ? "- " + preview.old + "\n" : "") + (preview?.new ? "+ " + preview.new : "");
-                                return preview?.body ?? "";
+                            clip: true
+                            contentWidth: width
+                            contentHeight: bodyText.implicitHeight
+                            boundsBehavior: Flickable.StopAtBounds
+                            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                            StyledText {
+                                id: bodyText
+                                width: parent.width
+                                text: {
+                                    const k = card.preview?.kind ?? "generic";
+                                    if (k === "bash") return "$ " + (card.preview?.command ?? "");
+                                    if (k === "write") return card.preview?.body ?? "";
+                                    if (k === "edit") return (card.preview?.old ? "- " + card.preview.old + "\n" : "") + (card.preview?.new ? "+ " + card.preview.new : "");
+                                    return card.preview?.body ?? "";
+                                }
+                                font.family: "monospace"
+                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                color: IslandStyle.subtextColor
+                                wrapMode: Text.Wrap
                             }
-                            font.family: "monospace"
-                            font.pixelSize: Appearance.font.pixelSize.smaller
-                            color: IslandStyle.subtextColor
-                            wrapMode: Text.Wrap
-                            verticalAlignment: Text.AlignTop
                         }
                     }
                 }
@@ -221,15 +232,17 @@ FocusScope {
                 }
 
                 StyledText {
+                    id: showAll
                     Layout.alignment: Qt.AlignHCenter
                     visible: AgentService.sessionCount > 0
                     text: "Show all " + AgentService.sessionCount + " session" + (AgentService.sessionCount === 1 ? "" : "s")
                     font.pixelSize: Appearance.font.pixelSize.smaller
-                    color: IslandStyle.subtextColor
+                    color: showAllMa.containsMouse ? IslandStyle.textColor : IslandStyle.subtextColor
                     MouseArea {
+                        id: showAllMa
                         anchors.fill: parent
-                        // resolving the permission switches to the list automatically;
-                        // tapping here just acknowledges (no-op while pending).
+                        hoverEnabled: true
+                        onClicked: surf.viewList = true
                     }
                 }
             }
@@ -260,6 +273,30 @@ FocusScope {
                     font.pixelSize: Appearance.font.pixelSize.smaller
                     color: IslandStyle.subtextColor
                 }
+            }
+
+            // peeking the list while a permission is pending → banner back to the card
+            Rectangle {
+                visible: surf.hasPermission
+                Layout.fillWidth: true
+                implicitHeight: 30
+                radius: 8
+                color: bannerMa.containsMouse ? Qt.rgba(0.91, 0.64, 0.24, 0.28) : Qt.rgba(0.91, 0.64, 0.24, 0.18)
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 10
+                    anchors.rightMargin: 10
+                    spacing: 8
+                    MaterialSymbol { text: "warning"; iconSize: 15; fill: 1; color: surf.cOrange }
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: AgentService.pendingPermissions.length + " permission" + (AgentService.pendingPermissions.length === 1 ? "" : "s") + " pending — review"
+                        font.pixelSize: Appearance.font.pixelSize.smaller
+                        color: IslandStyle.textColor
+                    }
+                    MaterialSymbol { text: "chevron_right"; iconSize: 16; color: surf.cOrange }
+                }
+                MouseArea { id: bannerMa; anchors.fill: parent; hoverEnabled: true; onClicked: surf.viewList = false }
             }
 
             ListView {
@@ -326,8 +363,8 @@ FocusScope {
                             spacing: 1
                             StyledText {
                                 Layout.fillWidth: true
-                                visible: (srow.modelData.message || "") !== ""
-                                text: "You: " + srow.modelData.message
+                                visible: (srow.modelData.prompt || "") !== ""
+                                text: "You: " + srow.modelData.prompt
                                 font.pixelSize: Appearance.font.pixelSize.smaller
                                 color: IslandStyle.subtextColor
                                 elide: Text.ElideRight

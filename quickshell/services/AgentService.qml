@@ -109,6 +109,8 @@ Singleton {
             "tool": obj.tool || "",
             "summary": obj.summary || "",
             "message": obj.message || "",
+            // the actual user prompt (only from UserPromptSubmit; persists)
+            "prompt": obj.event === "UserPromptSubmit" ? (obj.message || prev.prompt || "") : (prev.prompt || ""),
             "lastEvent": obj.event || "",
             "status": st,
             "ts": obj.ts || 0,

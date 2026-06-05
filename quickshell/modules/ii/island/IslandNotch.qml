@@ -169,6 +169,23 @@ Scope {
             property string notifIcon: ""
             readonly property var brightnessMonitor: Brightness.getMonitorForScreen(notchWindow.screen)
 
+            // attention flash when a NEW permission arrives
+            property int _lastPending: 0
+            property real permFlash: 0
+            Connections {
+                target: AgentService
+                function onPendingPermissionsChanged() {
+                    if (AgentService.pendingPermissions.length > notchWindow._lastPending)
+                        permFlashAnim.restart();
+                    notchWindow._lastPending = AgentService.pendingPermissions.length;
+                }
+            }
+            SequentialAnimation {
+                id: permFlashAnim
+                NumberAnimation { target: notchWindow; property: "permFlash"; to: 1; duration: 110; easing.type: Easing.OutQuad }
+                NumberAnimation { target: notchWindow; property: "permFlash"; to: 0; duration: 540; easing.type: Easing.InQuad }
+            }
+
             // Downsampled equalizer bars from the cava points (0..1).
             readonly property int barCount: 22
             property var barValues: {
@@ -278,6 +295,8 @@ Scope {
                 topRightRadius: 0
                 bottomLeftRadius: root.cornerRadius
                 bottomRightRadius: root.cornerRadius
+                border.width: notchWindow.permFlash > 0.01 ? 2 : 0
+                border.color: Qt.rgba(0.91, 0.64, 0.24, notchWindow.permFlash)
 
                 Behavior on width {
                     NumberAnimation { duration: root.morphDuration; easing.bezierCurve: root.goeyCurve }
