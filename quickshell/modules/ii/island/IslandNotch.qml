@@ -216,10 +216,10 @@ Scope {
                 }
             }
             property real targetWidth: islandState === "open" ? (root.surfaceSizes[Island.openSurface]?.w ?? root.maxWidth)
-                : islandState === "expanded" ? Math.min(root.expandedMaxWidth, contentWidth + 36)
+                : islandState === "expanded" ? Math.min(root.expandedMaxWidth, contentWidth + (displaySource === "agent" ? 56 : 36))
                 : 180
             property real targetHeight: islandState === "open" ? (root.surfaceSizes[Island.openSurface]?.h ?? root.maxHeight)
-                : islandState === "expanded" ? (displaySource === "media" || displaySource === "agent" ? 40 : 54)
+                : islandState === "expanded" ? (displaySource === "media" ? 40 : displaySource === "agent" ? 50 : 54)
                 : 36
 
             // Full-screen click-catcher (only while open). Sits BEHIND the notch
@@ -466,27 +466,30 @@ Scope {
                 RowLayout {
                     id: agentUI
                     anchors.centerIn: parent
-                    spacing: 9
+                    spacing: 11
                     opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "agent" ? 1 : 0
                     visible: opacity > 0
                     Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
                     AgentSpinner {
                         Layout.alignment: Qt.AlignVCenter
-                        mode: AgentService.headlineMode === "" ? "idle" : AgentService.headlineMode
-                        pixel: 2
+                        // resting presence → green "running" mascot (alive, no bars)
+                        mode: AgentService.headlineMode === "idle" ? "running" : (AgentService.headlineMode === "" ? "idle" : AgentService.headlineMode)
+                        pixel: 3
                     }
                     StyledText {
                         Layout.alignment: Qt.AlignVCenter
                         text: {
                             const m = AgentService.headlineMode;
-                            const proj = AgentService.headlineSession?.project ?? "";
-                            let t = m === "permission" ? "Needs you" : m === "waiting" ? "Waiting…" : (proj.length > 0 ? proj : "Working…");
+                            let t = m === "permission" ? "Needs you"
+                                  : m === "waiting" ? "Waiting…"
+                                  : m === "working" ? "Working…"
+                                  : "Agent Island";
                             if (AgentService.sessionCount > 1)
                                 t += "  ·  " + AgentService.sessionCount;
                             return t;
                         }
                         color: IslandStyle.textColor
-                        font.pixelSize: Appearance.font.pixelSize.small
+                        font.pixelSize: Appearance.font.pixelSize.normal
                     }
                 }
 

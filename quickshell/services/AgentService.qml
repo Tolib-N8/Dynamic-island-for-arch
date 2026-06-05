@@ -49,6 +49,9 @@ Singleton {
             if (s.status === "working" || s.status === "running")
                 m = "working";
         }
+        // sessions present but resting → show the brand label ("Agent Island")
+        if (m === "" && root.sessionList.length > 0)
+            return "idle";
         return m;
     }
     readonly property var headlineSession: {

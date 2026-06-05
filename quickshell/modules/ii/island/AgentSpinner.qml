@@ -24,26 +24,43 @@ Item {
         default: return "#9AA0AA";            // idle grey
         }
     }
-    readonly property bool showBars: root.mode === "working" || root.mode === "running" || root.mode === "compact"
+    readonly property bool showBars: root.mode === "working" || root.mode === "compact"
     readonly property bool showQuestion: root.mode === "permission" || root.mode === "waiting"
 
+    // 4-frame running cycle (head/eyes/antennae steady; legs + arms move).
     readonly property var mascotFrames: [
         [0,0,1,0,0,1,0,0,
          0,1,1,1,1,1,1,0,
          1,1,0,1,1,0,1,1,
          1,1,1,1,1,1,1,1,
          1,0,1,1,1,1,0,1,
-         1,0,1,0,0,1,0,1,
-         0,0,0,1,1,0,0,0,
-         0,1,1,0,0,1,1,0],
+         0,0,1,1,1,1,0,0,
+         0,1,0,0,0,0,1,0,
+         1,0,0,0,0,0,0,1],
         [0,0,1,0,0,1,0,0,
          0,1,1,1,1,1,1,0,
          1,1,0,1,1,0,1,1,
          1,1,1,1,1,1,1,1,
          1,0,1,1,1,1,0,1,
+         0,0,1,1,1,1,0,0,
          0,0,1,0,0,1,0,0,
-         0,1,0,1,1,0,1,0,
-         1,0,0,0,0,0,0,1]
+         0,1,0,0,0,1,0,0],
+        [0,0,1,0,0,1,0,0,
+         0,1,1,1,1,1,1,0,
+         1,1,0,1,1,0,1,1,
+         1,1,1,1,1,1,1,1,
+         1,0,1,1,1,1,0,1,
+         0,0,1,1,1,1,0,0,
+         0,0,0,1,1,0,0,0,
+         0,0,1,0,0,1,0,0],
+        [0,0,1,0,0,1,0,0,
+         0,1,1,1,1,1,1,0,
+         1,1,0,1,1,0,1,1,
+         1,1,1,1,1,1,1,1,
+         1,0,1,1,1,1,0,1,
+         0,0,1,1,1,1,0,0,
+         0,1,0,0,0,1,0,0,
+         0,0,1,0,0,0,1,0]
     ]
     readonly property var qFrame: [
         0,1,1,1,0,
@@ -57,7 +74,8 @@ Item {
 
     property int frame: 0
     property int barFrame: 0
-    Timer { interval: 260; running: root.animated; repeat: true; onTriggered: root.frame = (root.frame + 1) % 2 }
+    // running cycle (mascot always lively); bars run a touch faster while working
+    Timer { interval: 150; running: root.animated; repeat: true; onTriggered: root.frame = (root.frame + 1) % root.mascotFrames.length }
     Timer { interval: 170; running: root.animated && root.showBars; repeat: true; onTriggered: root.barFrame = (root.barFrame + 1) % 4 }
 
     function barH(i) {
