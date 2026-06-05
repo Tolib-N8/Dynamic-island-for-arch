@@ -18,15 +18,15 @@ Item {
         switch (root.mode) {
         case "working": return "#7AA2F7";    // blue
         case "running": return "#7EE787";    // green
-        case "waiting": return "#E8A23D";     // orange
-        case "permission": return "#E8A23D";  // orange — attention
+        case "waiting": return "#9BB1C9";     // soft blue-grey — calm "waiting for you"
+        case "permission": return "#E8A23D";  // orange — attention (permission only)
         case "compact": return "#B58AF8";     // purple
         case "done": return "#7EE787";        // green
         default: return "#9AA0AA";            // idle grey
         }
     }
     readonly property bool showBars: root.mode === "working" || root.mode === "compact"
-    readonly property bool showQuestion: root.mode === "permission" || root.mode === "waiting"
+    readonly property bool showQuestion: root.mode === "permission"
 
     // ---------- frame sets (8×8) ----------
     readonly property var runFrames: [
@@ -52,14 +52,14 @@ Item {
 
     function framesFor(m) {
         if (m === "done") return root.celebrateFrames;
-        if (m === "permission" || m === "waiting") return root.alertFrames;
-        if (m === "running" || m === "idle") return root.idleFrames;
+        if (m === "permission") return root.alertFrames;
+        if (m === "running" || m === "idle" || m === "waiting") return root.idleFrames;
         return root.runFrames; // working, compact
     }
     function intervalFor(m) {
         if (m === "done") return 200;
-        if (m === "permission" || m === "waiting") return 150;
-        if (m === "running" || m === "idle") return 480;
+        if (m === "permission") return 150;
+        if (m === "running" || m === "idle" || m === "waiting") return 480;
         return 150;
     }
 
@@ -90,14 +90,14 @@ Item {
         NumberAnimation { from: -5 * root.pixel; to: 0; duration: 260; easing.type: Easing.OutBounce }
         PauseAnimation { duration: 280 }
     }
-    SequentialAnimation on motionY { // gentle bob (resting)
-        running: root.animated && (root.mode === "running" || root.mode === "idle")
+    SequentialAnimation on motionY { // gentle bob (resting + calm waiting)
+        running: root.animated && (root.mode === "running" || root.mode === "idle" || root.mode === "waiting")
         loops: Animation.Infinite
         NumberAnimation { from: 0; to: -1.5 * root.pixel; duration: 850; easing.type: Easing.InOutSine }
         NumberAnimation { from: -1.5 * root.pixel; to: 0; duration: 850; easing.type: Easing.InOutSine }
     }
-    SequentialAnimation on motionX { // alert shake (needs-you)
-        running: root.animated && (root.mode === "permission" || root.mode === "waiting")
+    SequentialAnimation on motionX { // alert shake (permission only)
+        running: root.animated && root.mode === "permission"
         loops: Animation.Infinite
         NumberAnimation { from: 0; to: 1.5 * root.pixel; duration: 70 }
         NumberAnimation { from: 1.5 * root.pixel; to: -1.5 * root.pixel; duration: 110 }
