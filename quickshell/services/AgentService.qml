@@ -48,18 +48,25 @@ Singleton {
     readonly property string headlineMode: {
         if (root.pendingPermissions.length > 0)
             return "permission";
-        let m = "";
+        let working = false, done = false;
         for (let i = 0; i < root.sessionList.length; i++) {
             const s = root.sessionList[i];
             if (s.status === "waiting")
                 return "waiting";
             if (s.status === "working" || s.status === "running")
-                m = "working";
+                working = true;
+            if (s.status === "done")
+                done = true;
         }
-        // sessions present but resting → show the brand label ("Agent Island")
-        if (m === "" && root.sessionList.length > 0)
+        if (working)
+            return "working";
+        // nothing active: a just-finished session shows "Done" (until pruned),
+        // otherwise resting sessions show the brand label.
+        if (done)
+            return "done";
+        if (root.sessionList.length > 0)
             return "idle";
-        return m;
+        return "";
     }
     readonly property var headlineSession: {
         if (root.pendingPermissions.length > 0) {
