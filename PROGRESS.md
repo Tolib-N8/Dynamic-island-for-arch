@@ -7,17 +7,42 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
-**PROJECT FEATURE-COMPLETE & LIVE (2026-06-06).** Three floating islands + morphing
-notch on end-4/Quickshell; all dashboard surfaces (Widgets/Kanban/power/tools/
-launcher/overview); weather+network pills. The headline feature — live Claude Code
-agent status + permission Allow/Deny from the notch — is built, safety-proven
-(13/13, never hangs Claude), validated on a real `claude` session, fully polished
-(mascot personalities, multi-session, Done state, media coexistence, card peek/
-drag-scroll/flash/toast, ghost-prune, relative time), and **the hooks are now
-ENABLED GLOBALLY** in ~/.claude/settings.json via `bridge/install-hooks.py enable`
-(reversible: `disable`). User still merges to the live `ii` config themselves.
+**FEATURE-COMPLETE; GO-LIVE BLOCKED by a MULTI-MONITOR bug (2026-06-07).** All
+features built + polished + validated in the SINGLE-SCREEN nested dev window. The
+headline feature (live Claude Code agent + permission Allow/Deny from the notch)
+is safety-proven (13/13, never hangs Claude) and worked on a real `claude`
+session. BUT the first real-desktop switch (Path A: `qsConfig` ii→openagentisland)
+**broke on the user's multi-monitor setup** — see the blocker below. User has
+**reverted to `ii`** (safe) and **hooks are DISABLED** (island isn't running on
+ii, so the hooks just fire-and-fallback). Tree is clean / all committed.
 
-Toggle the island for real Claude work:
+### 🚨 GO-LIVE BLOCKER — multi-monitor rendering (NEXT SESSION, top priority)
+On switching the real desktop to `openagentisland` (3 monitors: a main external,
+the laptop's built-in display, and a vertical screen):
+- The **main external monitor** showed the islands/top strip.
+- The **built-in display AND the vertical monitor went COMPLETELY BLANK.**
+- **Screen sizing was also wrong.**
+User reverted to `ii`. **Pictures incoming after compaction.**
+Why it slipped: multi-monitor was NEVER testable in the single-screen nested
+window (flagged in Phase 8d). **Leading suspects to investigate:**
+1. The **always-full-screen notch window** — `IslandNotch.qml` sets
+   `implicitWidth: notchWindow.screen.width; implicitHeight: notchWindow.screen.height`
+   (so the click-catcher works) on a top-anchored, transparent, masked-to-notch
+   Top-layer window. Per-monitor this may mis-size / render opaque-black / cover
+   the wallpaper (Background, Bottom layer) on secondary monitors → "blank".
+2. **Per-monitor scaling/resolution** — `screen.width/height` may be off for
+   secondary/rotated (vertical) monitors → wrong sizing, oversized windows.
+3. The `Variants { model: Quickshell.screens }` wrapping renders all 3 islands on
+   every monitor — verify each actually targets its own screen and the masks/
+   exclusiveZone behave per-monitor.
+4. Background/wallpaper layer not rendering on the non-primary monitors.
+**Plan:** get the pics; reproduce SAFELY (don't full-switch — maybe spin a 2nd
+test config or inspect `Quickshell.screens` values on the real multi-monitor
+setup); fix the full-screen-notch + sizing; re-verify on all 3 monitors before
+any re-switch. The Path-A switch + revert is one line:
+`~/.config/hypr/hyprland/variables.lua` → `hl.env("qsConfig", "ii"/"openagentisland")`.
+
+Toggle hooks for real Claude work (currently DISABLED):
   python3 ~/Projects/openagentisland/bridge/install-hooks.py enable|disable|status
 
 ---
