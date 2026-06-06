@@ -7,13 +7,29 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
-**FEATURE-COMPLETE; multi-monitor GO-LIVE BLOCKER — ROOT-CAUSED + FIXED in repo,
-pending a real 3-monitor re-test (2026-06-07).** All features built + polished +
-validated in the SINGLE-SCREEN nested dev window. The headline feature (live
-Claude Code agent + permission Allow/Deny from the notch) is safety-proven (13/13,
-never hangs Claude) and worked on a real `claude` session. The first real-desktop
-switch (Path A) **blanked the scaled + rotated monitors**; root cause found and
-fixed (below). User is still on `ii` (safe); **hooks DISABLED** until re-test.
+**FEATURE-COMPLETE; multi-monitor blanking FIXED + VERIFIED on the scaled built-in
+monitor; now running LIVE on `openagentisland` (2026-06-06).** All features built +
+polished + validated. The headline feature (live Claude Code agent + permission
+Allow/Deny from the notch) is safety-proven (13/13, never hangs Claude). The
+multi-monitor blanking bug (below) is root-caused + fixed, and the fix was
+**verified live on `eDP-1` (scale 1.5)** — the exact monitor that blanked before
+now renders wallpaper + all three islands + dock correctly.
+
+**Live state right now:** `qs -c openagentisland` is running (started detached with
+`setsid qs -c openagentisland`); **hooks ENABLED**; socket listener up at
+`$XDG_RUNTIME_DIR/openagentisland.sock`. `variables.lua` is still `qsConfig="ii"`
+(NOT yet persisted) — so a relog returns to `ii`; this live session is a hot-swap
+test. **Still to verify before persisting:** the rotated vertical monitor (`DP-3`,
+transform 1) and the full 3-monitor combo together (only `eDP-1` is connected now,
+user is mobile). To persist as the real desktop: set `variables.lua` →
+`hl.env("qsConfig", "openagentisland")`.
+
+Re-test / swap commands:
+- Hot-swap to island: `pkill -f "qs -c ii"; setsid qs -c openagentisland </dev/null >/tmp/oai.log 2>&1 &`
+  (NOTE: `hyprctl dispatch exec "qs -c openagentisland"` did NOT keep it alive this
+   session — use `setsid` to detach it from the launching shell.)
+- Revert to ii: `pkill -f "qs -c openagentisland"; hyprctl dispatch exec "qs -c ii"`
+- Hooks: `python3 ~/Projects/openagentisland/bridge/install-hooks.py enable|disable|status`
 
 ### ✅ MULTI-MONITOR BLANKING — root cause found + fixed
 **Symptom (Path A switch, 3 monitors):** only the main external monitor worked;
@@ -33,7 +49,7 @@ The notch was the SOLE violator — every other panel (Background, Dock, left/ri
 islands) is content-/edge-sized and survived; their disappearance on the dead
 monitors was collateral from the broken output, not their own bug.
 
-**Fix (commit pending):** anchor the notch window `top+left+right` (logical
+**Fix (commit `c94a7b9`):** anchor the notch window `top+left+right` (logical
 full-width per monitor) + fixed `implicitHeight: maxHeight+60`; removed both
 `screen.width/height`. `exclusiveZone` (40) still honored (anchored top + both
 perpendicular edges). This matches the framework's `Background`/`Dock` pattern,
@@ -41,12 +57,12 @@ which is already proven on all 3 of the user's monitors under `ii`. Trade-off: t
 outside-click-to-close catcher now covers the top ~460px instead of the full
 screen (Esc / re-click the pill still close); fine since surfaces hang from the top.
 
-**Re-test plan:** user re-switches Path A and checks ALL 3 monitors render
-wallpaper + islands + dock; if a secondary monitor's wallpaper still looks
-mis-scaled, that's a separate `Background` parallax tweak (also uses `screen.width`
-in its zoom math) — but it renders fine under `ii`, so likely a non-issue.
-Path-A switch + revert is one line:
-`~/.config/hypr/hyprland/variables.lua` → `hl.env("qsConfig", "ii"/"openagentisland")`.
+**VERIFIED (2026-06-06):** live hot-swap on `eDP-1` (scale 1.5) — wallpaper +
+all three islands + dock render correctly; no blanking. The scaled-monitor failure
+mode is fixed. STILL TO VERIFY: rotated `DP-3` (transform 1) + the full 3-monitor
+combo (only `eDP-1` connected during the test). If a secondary monitor's wallpaper
+ever looks mis-scaled, that's a separate `Background` parallax tweak (also uses
+`screen.width` in its zoom math) — but it renders fine under `ii`, so likely moot.
 
 Toggle hooks for real Claude work (currently DISABLED):
   python3 ~/Projects/openagentisland/bridge/install-hooks.py enable|disable|status
@@ -54,6 +70,20 @@ Toggle hooks for real Claude work (currently DISABLED):
 ---
 
 ## Done (newest first)
+
+- **2026-06-06 — Multi-monitor blanking ROOT-CAUSED, FIXED, and VERIFIED live.**
+  Root cause: `IslandNotch.qml` sized its PanelWindow in PHYSICAL pixels
+  (`implicitWidth/Height: screen.width/height`); layer-shell uses LOGICAL coords,
+  so any monitor with scale≠1 or rotation got an oversized/mis-axed full-screen
+  Top-layer surface that broke compositing for the whole output → blank. Confirmed
+  with `monitors.lua` + photos: `HDMI-A-1` (1.0, no transform) worked; `eDP-1`
+  (1.5×) + `DP-3` (transform 1) blanked. Fix (`c94a7b9`): edge-anchor the notch
+  window `top+left+right` + fixed height, drop `screen.width/height`; matches the
+  framework's `Background`/`Dock` sizing. Verified by hot-swapping the real desktop
+  to `openagentisland` on the `eDP-1` 1.5× built-in — wallpaper, all 3 islands, and
+  the dock render correctly (previously fully blank). Re-enabled hooks; agent
+  feature ready to test live. Pending: rotated `DP-3` + full 3-monitor verification
+  (user was mobile, single screen connected).
 
 - **2026-06-06 — Phase 6+7 agent feature VALIDATED end-to-end (real Claude Code).**
   Ran a real `claude` session in `~/agent-island-test/` (project-level hooks,
