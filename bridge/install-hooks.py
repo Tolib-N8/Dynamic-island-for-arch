@@ -21,7 +21,7 @@ import time
 SETTINGS = os.path.expanduser("~/.claude/settings.json")
 HOOK = "/home/topg/Projects/openagentisland/bridge/oai_hook.py"
 
-STATUS_EVENTS = ["SessionStart", "UserPromptSubmit", "PostToolUse", "Notification", "Stop"]
+STATUS_EVENTS = ["SessionStart", "UserPromptSubmit", "PostToolUse", "Notification", "Stop", "SessionEnd"]
 PERM_MATCHER = "Bash|Write|Edit|MultiEdit|NotebookEdit"
 
 

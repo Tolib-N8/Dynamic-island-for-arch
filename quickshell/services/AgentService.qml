@@ -200,6 +200,24 @@ Singleton {
         root.sessions = next;
     }
 
+    // Remove a session outright (its terminal closed / it exited). Also clears any
+    // of its bypass/allow rules and pending permission rows so nothing lingers.
+    function endSession(sid) {
+        if (root.sessions[sid]) {
+            const next = Object.assign({}, root.sessions);
+            delete next[sid];
+            root.sessions = next;
+        }
+        const remaining = root.pendingPermissions.filter(p => (p.session_id || "default") !== sid);
+        if (remaining.length !== root.pendingPermissions.length)
+            root.pendingPermissions = remaining;
+        if (root._sessionBypass[sid]) {
+            const b = Object.assign({}, root._sessionBypass);
+            delete b[sid];
+            root._sessionBypass = b;
+        }
+    }
+
     function dropPending(reqId) {
         const p = root.pendingPermissions.find(x => x.request_id === reqId);
         delete root._conns[reqId];
@@ -277,6 +295,10 @@ Singleton {
         }
         if (obj.type === "permission_request" && obj.request_id) {
             root.addPermission(obj, conn);
+        } else if (obj.event === "SessionEnd") {
+            // Session actually closed (exit / terminal closed) — remove it now
+            // instead of leaving a ghost "idle"/"waiting" row until staleness.
+            root.endSession(obj.session_id || "default");
         } else {
             root.applyEvent(obj);
         }

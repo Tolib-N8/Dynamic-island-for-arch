@@ -71,6 +71,15 @@ Toggle hooks for real Claude work (currently DISABLED):
 
 ## Done (newest first)
 
+- **2026-06-06 — Ghost sessions fixed via `SessionEnd` hook.** Closing a Claude
+  session left a ghost row (`idle`/`waiting`) until the 5-min staleness timer,
+  because `Stop` = "turn finished", not "session closed". Added Claude Code's
+  `SessionEnd` hook (`install-hooks.py` STATUS_EVENTS) → `AgentService.endSession()`
+  removes the session immediately (+ clears its pending rows & bypass rule).
+  Verified: injection test (SessionStart→Notification/waiting→SessionEnd→removed)
+  and a real `claude -p` one-shot leaving no ghost. Caveat: a hard kill (SIGKILL /
+  crash) won't fire `SessionEnd` — the 5-min staleness backstop still cleans those.
+
 - **2026-06-06 — Multi-monitor blanking ROOT-CAUSED, FIXED, and VERIFIED live.**
   Root cause: `IslandNotch.qml` sized its PanelWindow in PHYSICAL pixels
   (`implicitWidth/Height: screen.width/height`); layer-shell uses LOGICAL coords,
