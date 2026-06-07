@@ -15,14 +15,16 @@ multi-monitor blanking bug (below) is root-caused + fixed, and the fix was
 **verified live on `eDP-1` (scale 1.5)** — the exact monitor that blanked before
 now renders wallpaper + all three islands + dock correctly.
 
-**Live state right now:** `qs -c openagentisland` is running (started detached with
-`setsid qs -c openagentisland`); **hooks ENABLED**; socket listener up at
-`$XDG_RUNTIME_DIR/openagentisland.sock`. `variables.lua` is still `qsConfig="ii"`
-(NOT yet persisted) — so a relog returns to `ii`; this live session is a hot-swap
-test. **Still to verify before persisting:** the rotated vertical monitor (`DP-3`,
-transform 1) and the full 3-monitor combo together (only `eDP-1` is connected now,
-user is mobile). To persist as the real desktop: set `variables.lua` →
-`hl.env("qsConfig", "openagentisland")`.
+**Live state right now:** OpenAgentIsland is the PERMANENT desktop — `variables.lua`
+is `hl.env("qsConfig", "openagentisland")` (backup: `variables.lua.bak-preisland`),
+so it loads on every boot/relogin. **hooks ENABLED**; socket listener up at
+`$XDG_RUNTIME_DIR/openagentisland.sock`. **Still UNVERIFIED on real hardware:** the
+rotated vertical monitor (`DP-3`, transform 1) and the full 3-monitor combo (all
+testing so far was on `eDP-1` 1.5× only, user mobile) — the logical-anchor fix
+should handle rotation, but confirm on reconnect. **Rollback if multi-monitor
+misbehaves:** set `variables.lua` → `hl.env("qsConfig", "ii")` (or restore the
+.bak) and relog; or live-revert with
+`pkill -f "qs -c openagentisland"; hyprctl dispatch exec "qs -c ii"`.
 
 Re-test / swap commands:
 - Hot-swap to island: `pkill -f "qs -c ii"; setsid qs -c openagentisland </dev/null >/tmp/oai.log 2>&1 &`
