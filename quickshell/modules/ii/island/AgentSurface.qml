@@ -46,22 +46,44 @@ FocusScope {
     function canJump(s) {
         return (s?.pids?.length ?? 0) > 0 && surf.findWindow(s) !== null;
     }
+    function _norm(t) {
+        return (t || "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+    }
     function findWindow(s) {
         const pids = s?.pids ?? [];
-        const wins = HyprlandData.windowList ?? [];
-        for (let i = 0; i < wins.length; i++)
-            if (pids.indexOf(wins[i].pid) !== -1)
-                return wins[i];
-        return null;
+        const wins = (HyprlandData.windowList ?? []).filter(w => pids.indexOf(w.pid) !== -1);
+        if (wins.length === 0)
+            return null;
+        if (wins.length === 1)
+            return wins[0];
+        // Multiple windows share a PID (single-process terminals like Warp) — pick
+        // the one whose title best matches the session (Claude sets the terminal
+        // title to a summary of the conversation, which echoes the prompt).
+        const kw = surf._norm((s.prompt || "") + " " + (s.summary || "")).split(" ").filter(w => w.length > 2);
+        let best = wins[0], bestScore = -1;
+        for (let i = 0; i < wins.length; i++) {
+            const t = surf._norm(wins[i].title);
+            let score = 0;
+            for (let j = 0; j < kw.length; j++)
+                if (t.indexOf(kw[j]) !== -1)
+                    score++;
+            if (score > bestScore) {
+                bestScore = score;
+                best = wins[i];
+            }
+        }
+        return best;
     }
     // Focus the terminal running this session — switches workspace if needed.
+    // This Hyprland uses the Lua dispatch API (hl.dsp.*); the standard
+    // "focuswindow address:…" form silently no-ops here.
     function jump(s) {
         const w = surf.findWindow(s);
         if (!w) {
             AgentService._toast("Terminal not found");
             return;
         }
-        Hyprland.dispatch("focuswindow address:" + w.address);
+        Hyprland.dispatch(`hl.dsp.focus({window = "address:${w.address}"})`);
         Island.close();
     }
 
