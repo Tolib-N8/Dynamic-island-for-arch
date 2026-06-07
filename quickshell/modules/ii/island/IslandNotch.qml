@@ -634,6 +634,32 @@ Scope {
         }
     }
 
+    // Dedicated top-strip reservation. A stable, empty, full-width, click-through
+    // window that reserves `reservedStrip` px at the top so maximized windows open
+    // BELOW the island row (like the bar used to). Kept SEPARATE from the notch
+    // window — the notch is full-screen (all-4-anchored) so its click-anywhere
+    // catcher works, which would forfeit exclusiveZone; this tiny strip carries the
+    // reservation instead, and never resizes so windows never jump.
+    Variants {
+        model: Quickshell.screens
+        PanelWindow {
+            required property var modelData
+            screen: modelData
+            WlrLayershell.namespace: "quickshell:islandReserve"
+            WlrLayershell.layer: WlrLayer.Bottom
+            color: "transparent"
+            exclusionMode: ExclusionMode.Normal
+            exclusiveZone: root.reservedStrip
+            anchors {
+                top: true
+                left: true
+                right: true
+            }
+            implicitHeight: root.reservedStrip
+            mask: Region {}   // fully click-through — purely a spacer
+        }
+    }
+
     // Small reusable OSD bits.
     component OsdBar: Rectangle {
         id: bar
