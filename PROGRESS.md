@@ -80,11 +80,14 @@ Toggle hooks for real Claude work (currently DISABLED):
   Hyprland) — which is why island workspace/window dispatches "worked" in dev but
   not live. The correct form is the LUA API: `hl.dsp.focus({window = "address:…"})`,
   `hl.dsp.focus({workspace = N})`, `hl.dsp.window.move({…})`, `hl.dsp.window.close({…})`
-  (same forms the upstream end-4 OverviewWidget uses). ⚠️ STILL TO FIX: our
-  `IslandWorkspaces.qml` (`workspace e±1`, `workspace N`) and `OverviewSurface.qml`
-  (focuswindow/workspace/movetoworkspacesilent/closewindow) still use the standard
-  form → workspace switching from the islands is BROKEN on the real desktop. Jump
-  and the agent UI are fixed; these are the remaining standard-dispatch callers.
+  (same forms the upstream end-4 OverviewWidget uses). ✅ FIXED everywhere: all
+  island `Hyprland.dispatch` callers now use `hl.dsp.*` — `AgentSurface` (jump),
+  `IslandWorkspaces` (scroll+click; relative e±1 computed as absolute from
+  `activeWs`), `OverviewSurface` (workspace switch, window focus/move/close).
+  `grep Hyprland.dispatch modules/ii/island/` → all hl.dsp. (`LauncherSearch`
+  already used `hl.dsp.global`.) The end-4 `OverviewWidget` (old overview, not our
+  island) already used hl.dsp. NOTE: verify on the real desktop — proven live that
+  `hl.dsp.focus({workspace=N})` and `{window="address:…"}` work.
 
 - **2026-06-07 — Session permission-mode shown + live-synced.** Hook reports
   `permission_mode`; a colored ModeChip on each session row / permission card shows
