@@ -4,6 +4,10 @@
 
 <p align="center">Built in <a href="https://quickshell.outfoxxed.me/">Quickshell</a>/QML on top of the <a href="https://github.com/end-4/dots-hyprland">end-4 / illogical-impulse</a> framework.</p>
 
+<p align="center"><img src="docs/screenshots/morph.gif" alt="The notch morphing through volume, agents, and a Claude Code permission request" width="640"></p>
+
+<p align="center"><i>The notch morphing live — volume OSD → agent status → a Claude Code permission request, approved in place.</i></p>
+
 <p align="center"><img src="docs/screenshots/desktop.png" alt="OpenAgentIsland desktop — three floating islands over a wallpaper" width="900"></p>
 
 No full-width bar — **three floating islands** with the wallpaper breathing through the gaps. The
