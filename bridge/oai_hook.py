@@ -89,6 +89,29 @@ def build_preview(payload):
     return {"kind": "generic", "body": json.dumps(ti)[:1200]}
 
 
+def ancestor_pids(maxdepth=16):
+    """Walk the process tree upward from this hook. The terminal window that runs
+    `claude` is always one of our ancestors, so the island can match these PIDs
+    against Hyprland's window list to jump to the right terminal. Best-effort."""
+    pids = []
+    pid = os.getpid()
+    try:
+        for _ in range(maxdepth):
+            with open(f"/proc/{pid}/stat") as f:
+                data = f.read()
+            # "pid (comm) state ppid ..." — comm may contain spaces/parens, so
+            # parse after the last ')'.
+            after = data[data.rfind(")") + 2:].split()
+            ppid = int(after[1])
+            if ppid <= 1 or ppid == pid:
+                break
+            pids.append(ppid)
+            pid = ppid
+    except Exception:
+        pass
+    return pids
+
+
 def base_msg(payload):
     cwd = payload.get("cwd", "") or ""
     prompt = payload.get("prompt") or ""
@@ -101,6 +124,7 @@ def base_msg(payload):
         "tool": payload.get("tool_name", ""),
         "summary": summarize(payload),
         "message": message,
+        "pids": ancestor_pids(),
         "ts": int(time.time()),
     }
 

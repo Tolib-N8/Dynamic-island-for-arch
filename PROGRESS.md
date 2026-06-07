@@ -73,6 +73,25 @@ Toggle hooks for real Claude work (currently DISABLED):
 
 ## Done (newest first)
 
+- **2026-06-06 — Jump-to-terminal (the previously-skipped feature).** Each session
+  row in the agent list has an `open_in_new` button → focuses the terminal running
+  that Claude session (switches workspace if needed). Mechanism: `oai_hook.py` sends
+  its process-ancestor PIDs (`ancestor_pids()`); the terminal is always an ancestor
+  of `claude`, so `AgentService` stores them and `AgentSurface.findWindow()` matches
+  a PID against `HyprlandData.windowList`, then `Hyprland.dispatch("focuswindow
+  address:…")`. Verified the ancestor chain includes the real window pid. Caveat:
+  single-process multi-window terminals (Warp) share one pid across windows, so it
+  focuses *a* Warp window, not the exact tab; per-process terminals (foot/kitty/
+  alacritty) are precise. Button hidden when no window matches.
+
+- **2026-06-06 — Per-monitor open + full-screen close-catcher + clean agent surface
+  + restored top-strip reservation.** (3 reported bugs.) Island bus tracks
+  `openScreen` so a surface opens only on the clicked monitor; notch window anchors
+  all-4 (logical full-screen, multi-monitor safe) for a click-anywhere-to-close
+  catcher; a separate stable strip window re-reserves the top 40px so windows sit
+  below the islands; agent surface re-laid-out (title=project, prompt up to 2 lines,
+  command = dimmed monospace tail).
+
 - **2026-06-06 — Ghost sessions fixed via `SessionEnd` hook.** Closing a Claude
   session left a ghost row (`idle`/`waiting`) until the 5-min staleness timer,
   because `Stop` = "turn finished", not "session closed". Added Claude Code's

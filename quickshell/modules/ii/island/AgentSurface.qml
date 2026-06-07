@@ -5,6 +5,7 @@ import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
+import Quickshell.Hyprland
 
 // State-3 agent surface (click-to-open). Shows the orange PERMISSION CARD when a
 // request is pending (tool + preview + Deny/Allow Once/Allow All/Bypass), else
@@ -39,6 +40,29 @@ FocusScope {
     function statusColor(s) {
         return s === "permission" || s === "waiting" ? surf.cOrange
              : s === "working" ? surf.cBlue : s === "done" ? surf.cGreen : IslandStyle.subtextColor;
+    }
+
+    // Is a terminal window linked to this session (so we can jump to it)?
+    function canJump(s) {
+        return (s?.pids?.length ?? 0) > 0 && surf.findWindow(s) !== null;
+    }
+    function findWindow(s) {
+        const pids = s?.pids ?? [];
+        const wins = HyprlandData.windowList ?? [];
+        for (let i = 0; i < wins.length; i++)
+            if (pids.indexOf(wins[i].pid) !== -1)
+                return wins[i];
+        return null;
+    }
+    // Focus the terminal running this session — switches workspace if needed.
+    function jump(s) {
+        const w = surf.findWindow(s);
+        if (!w) {
+            AgentService._toast("Terminal not found");
+            return;
+        }
+        Hyprland.dispatch("focuswindow address:" + w.address);
+        Island.close();
     }
 
     // small rounded chip ("Claude")
@@ -353,6 +377,13 @@ FocusScope {
                     Behavior on implicitHeight { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
                     HoverHandler { id: srowHover }
 
+                    // base click area (behind the content) → expand this row. Declared
+                    // FIRST so the jump button in the header stays clickable on top.
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: surf.expandedId = srow.modelData.id
+                    }
+
                     ColumnLayout {
                         id: srowCol
                         anchors.left: parent.left
@@ -387,6 +418,28 @@ FocusScope {
                                 text: surf.relTime(srow.modelData.ts)
                                 font.pixelSize: Appearance.font.pixelSize.smaller
                                 color: IslandStyle.subtextColor
+                            }
+                            // jump to the terminal window running this session
+                            Rectangle {
+                                Layout.alignment: Qt.AlignVCenter
+                                visible: surf.canJump(srow.modelData)
+                                implicitWidth: 24
+                                implicitHeight: 24
+                                radius: 7
+                                color: jumpMa.containsMouse ? Qt.rgba(0.48, 0.64, 0.97, 0.22) : Qt.rgba(1, 1, 1, 0.06)
+                                Behavior on color { ColorAnimation { duration: 110 } }
+                                MaterialSymbol {
+                                    anchors.centerIn: parent
+                                    text: "open_in_new"
+                                    iconSize: 15
+                                    color: jumpMa.containsMouse ? surf.cBlue : IslandStyle.subtextColor
+                                }
+                                MouseArea {
+                                    id: jumpMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    onClicked: surf.jump(srow.modelData)
+                                }
                             }
                         }
 
@@ -430,11 +483,6 @@ FocusScope {
                                 }
                             }
                         }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: surf.expandedId = srow.modelData.id
                     }
                 }
             }

@@ -113,6 +113,8 @@ Singleton {
             "prompt": obj.event === "UserPromptSubmit" ? (obj.message || prev.prompt || "") : (prev.prompt || ""),
             "lastEvent": obj.event || "",
             "status": st,
+            // process-ancestor PIDs (terminal window is one of them) — for jump-to-terminal
+            "pids": (obj.pids && obj.pids.length > 0) ? obj.pids : (prev.pids || []),
             "ts": obj.ts || 0,
             "doneTick": st === "done" ? root._tick : 0,
             "waitTick": st === "waiting" ? (prev.status === "waiting" ? (prev.waitTick || root._tick) : root._tick) : 0,
