@@ -60,7 +60,7 @@ FocusScope {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            Hyprland.dispatch(`workspace ${cell.wsId}`);
+                            Hyprland.dispatch(`hl.dsp.focus({workspace = ${cell.wsId}})`);
                             Island.close();
                         }
                     }
@@ -138,7 +138,7 @@ FocusScope {
                                             const row = Math.max(0, Math.min(1, Math.floor(p.y / grid.cellH)));
                                             const target = row * 5 + col + 1;
                                             if (target !== chip.modelData.workspace.id)
-                                                Hyprland.dispatch(`movetoworkspacesilent ${target},address:${chip.modelData.address}`);
+                                                Hyprland.dispatch(`hl.dsp.window.move({workspace = ${target}, follow = false, window = "address:${chip.modelData.address}"})`);
                                         }
                                         suppressClick = wasDragging;
                                         surf.dragging = false;
@@ -151,10 +151,10 @@ FocusScope {
                                             return;
                                         }
                                         if (m.button === Qt.LeftButton) {
-                                            Hyprland.dispatch(`focuswindow address:${chip.modelData.address}`);
+                                            Hyprland.dispatch(`hl.dsp.focus({window = "address:${chip.modelData.address}"})`);
                                             Island.close();
                                         } else if (m.button === Qt.RightButton) {
-                                            Hyprland.dispatch(`closewindow address:${chip.modelData.address}`);
+                                            Hyprland.dispatch(`hl.dsp.window.close({window = "address:${chip.modelData.address}"})`);
                                         }
                                     }
                                 }

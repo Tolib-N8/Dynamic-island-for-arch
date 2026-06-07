@@ -48,10 +48,12 @@ Item {
     WheelHandler {
         acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         onWheel: event => {
+            // Lua-Hyprland dispatch (hl.dsp.*); compute the absolute target since the
+            // standard relative "workspace e±1" form no-ops here.
             if (event.angleDelta.y < 0)
-                Hyprland.dispatch(`workspace e+1`);
+                Hyprland.dispatch(`hl.dsp.focus({workspace = ${root.activeWs + 1}})`);
             else if (event.angleDelta.y > 0)
-                Hyprland.dispatch(`workspace e-1`);
+                Hyprland.dispatch(`hl.dsp.focus({workspace = ${Math.max(1, root.activeWs - 1)}})`);
         }
     }
 
@@ -108,7 +110,7 @@ Item {
                 MouseArea {
                     anchors.fill: parent
                     acceptedButtons: Qt.LeftButton
-                    onPressed: Hyprland.dispatch(`workspace ${del.wsId}`)
+                    onPressed: Hyprland.dispatch(`hl.dsp.focus({workspace = ${del.wsId}})`)
                 }
             }
         }
