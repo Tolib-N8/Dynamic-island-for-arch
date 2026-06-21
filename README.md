@@ -1,4 +1,4 @@
-<h1 align="center">OpenAgentIsland</h1>
+<h1 align="center">Open Agent Island</h1>
 
 <p align="center"><b>A macOS-style Dynamic Island desktop for Hyprland — that puts your Claude Code agents right in the notch.</b></p>
 
