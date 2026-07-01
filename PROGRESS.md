@@ -7,6 +7,34 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**PLASMA EDITION (Variant A: notch-only) — WORKING + VERIFIED on KDE Plasma
+Wayland/KWin (2026-07-01).** A separate Quickshell config root at `plasma/`
+renders only the central morphing notch + the agent bridge, to run alongside
+Plasma's native panels. Verified live on this machine (KWin): notch renders as a
+layer-shell surface, media morph + cava visualizer work, agent-status morph works,
+and the Claude Code **permission round-trip works end-to-end** (card → click Allow
+All → decision written back to the hook). Reuses the existing global hooks in
+`~/.claude/settings.json` and the `$XDG_RUNTIME_DIR/openagentisland.sock` socket —
+**no bridge/hook changes needed** (both are DE-agnostic).
+
+- **Layout:** `plasma/shell.qml` is the only new source (notch-only entry). All
+  shared code is symlinked from `quickshell/`, so `import qs.*` resolves and the
+  Hyprland shell is untouched.
+- **Only Hyprland-specific notch feature = jump-to-terminal.** Made DE-aware in
+  `quickshell/modules/ii/island/AgentSurface.qml`: `onHyprland` runtime check;
+  Hyprland path (`hl.dsp.focus`) unchanged, else foreign-toplevel `activate()`
+  (KWin-supported), matching terminal by title keywords (no PID in the protocol).
+- **Deploy:** `ln -sfn ~/Projects/openagentisland/plasma ~/.config/quickshell/openagentisland-plasma`
+  then `qs -c openagentisland-plasma`. Autostart template + docs in `plasma/`.
+- **Plasma trade-offs (harmless):** notifications owned by Plasma (notch notif
+  morph quiet); GlobalShortcut unsupported on KWin (bind via KDE settings).
+- **TODO:** real-hardware test of jump-to-terminal against a live `claude`
+  terminal; optional multi-monitor pass on Plasma; user autostart opt-in.
+
+---
+
+## Previous phase & status
+
 **FEATURE-COMPLETE; multi-monitor blanking FIXED + VERIFIED on the scaled built-in
 monitor; now running LIVE on `openagentisland` (2026-06-06).** All features built +
 polished + validated. The headline feature (live Claude Code agent + permission

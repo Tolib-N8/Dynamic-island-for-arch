@@ -5,7 +5,9 @@ import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
+import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Wayland
 
 // State-3 agent surface (click-to-open). Shows the orange PERMISSION CARD when a
 // request is pending (tool + preview + Deny/Allow Once/Allow All/Bypass), else
@@ -42,9 +44,40 @@ FocusScope {
              : s === "working" ? surf.cBlue : s === "done" ? surf.cGreen : IslandStyle.subtextColor;
     }
 
+    // Are we running under Hyprland (live IPC), or another compositor (e.g. KWin
+    // on Plasma)? On Hyprland we jump via HyprlandData pids + hl.dsp.focus; off
+    // Hyprland we fall back to the wlr-foreign-toplevel protocol (Toplevel.activate),
+    // which KWin supports. Keeps the Hyprland path byte-for-byte unchanged.
+    readonly property bool onHyprland: (Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE") ?? "").length > 0
+
     // Is a terminal window linked to this session (so we can jump to it)?
     function canJump(s) {
-        return (s?.pids?.length ?? 0) > 0 && surf.findWindow(s) !== null;
+        return surf.onHyprland
+             ? ((s?.pids?.length ?? 0) > 0 && surf.findWindow(s) !== null)
+             : (surf.findToplevel(s) !== null);
+    }
+    // Foreign-toplevel fallback (no PID in the protocol): score toplevels by how
+    // well their title matches the session's prompt/summary (Claude sets the
+    // terminal title to a conversation summary), preferring known terminal appIds.
+    function findToplevel(s) {
+        const kw = surf._norm((s?.prompt || "") + " " + (s?.summary || "")).split(" ").filter(w => w.length > 2);
+        const terms = ["kitty", "alacritty", "foot", "konsole", "wezterm", "warp", "ghostty", "gnome-terminal", "xterm", "terminal"];
+        let best = null, bestScore = -1;
+        for (const t of (ToplevelManager.toplevels?.values ?? [])) {
+            const title = surf._norm(t.title);
+            const app = (t.appId || "").toLowerCase();
+            let score = 0;
+            for (let j = 0; j < kw.length; j++)
+                if (kw[j].length > 0 && title.indexOf(kw[j]) !== -1)
+                    score++;
+            if (terms.some(x => app.indexOf(x) !== -1))
+                score += 1; // tie-break toward actual terminals
+            if (score > bestScore) {
+                bestScore = score;
+                best = t;
+            }
+        }
+        return bestScore > 0 ? best : null;
     }
     function _norm(t) {
         return (t || "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
@@ -78,12 +111,23 @@ FocusScope {
     // This Hyprland uses the Lua dispatch API (hl.dsp.*); the standard
     // "focuswindow address:…" form silently no-ops here.
     function jump(s) {
-        const w = surf.findWindow(s);
-        if (!w) {
+        if (surf.onHyprland) {
+            const w = surf.findWindow(s);
+            if (!w) {
+                AgentService._toast("Terminal not found");
+                return;
+            }
+            Hyprland.dispatch(`hl.dsp.focus({window = "address:${w.address}"})`);
+            Island.close();
+            return;
+        }
+        // Plasma / other wlroots: activate via foreign-toplevel.
+        const tl = surf.findToplevel(s);
+        if (!tl) {
             AgentService._toast("Terminal not found");
             return;
         }
-        Hyprland.dispatch(`hl.dsp.focus({window = "address:${w.address}"})`);
+        tl.activate();
         Island.close();
     }
 
