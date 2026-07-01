@@ -26,23 +26,20 @@ Singleton {
     function setText(msg) { root.text = msg || ""; root.mode = "text"; }
     function setLevel(v) { root.level = Math.max(0, Math.min(1, v)); }
 
+    // Poll the level file while showing live bars. Use the onLoaded SIGNAL (fires
+    // on every load) — onLoadedChanged only fires once, so it wouldn't re-parse.
     FileView {
         id: levelView
         path: root.levelFile
-        blockLoading: false
-        onLoadedChanged: {
-            const raw = levelView.text();
-            if (raw === undefined || raw === null)
-                return;
-            const v = parseFloat(String(raw).trim());
+        onLoaded: {
+            const v = parseFloat(String(levelView.text()).trim());
             if (!isNaN(v))
                 root.level = Math.max(0, Math.min(1, v));
         }
     }
-    // Poll the level file only while showing live bars.
     Timer {
         running: root.mode === "bars"
-        interval: 33
+        interval: 40
         repeat: true
         onTriggered: levelView.reload()
     }
