@@ -47,8 +47,8 @@ ShellRoot {
         // Auto-respawn if it ever dies, so notifications (and DND restore) never
         // get stuck. Small delay avoids a tight crash loop.
         onExited: respawn.start()
-        Timer { id: respawn; interval: 1500; onTriggered: notifBridge.running = true }
     }
+    Timer { id: respawn; interval: 1500; onTriggered: notifBridge.running = true }
 
     // The star, and only the star.
     LazyLoader {
@@ -68,5 +68,18 @@ ShellRoot {
         function dashboard(): void { Island.toggle("dashboard", _screen()); }
         function agent(): void { Island.toggle("agent", _screen()); }
         function close(): void { Island.close(); }
+    }
+
+    // The "Code" voice assistant drives the notch as its overlay (replacing its
+    // own quickshell overlay.qml). See ai-assistant/scripts/common.py.
+    IpcHandler {
+        target: "voice"
+
+        function bars(): void { VoiceAssistant.mode = "bars"; }              // live mic bars ("show" collides with the `ipc show` subcommand)
+        function idle(): void { VoiceAssistant.mode = "idle"; }              // gentle idle animation
+        function hide(): void { VoiceAssistant.mode = "hidden"; VoiceAssistant.text = ""; VoiceAssistant.level = 0; }
+        function text(msg: string): void { VoiceAssistant.text = msg; VoiceAssistant.mode = "text"; }
+        function level(rms: real): void { VoiceAssistant.level = Math.max(0, Math.min(1, rms)); }
+        function dump(): string { return VoiceAssistant.mode + " active=" + VoiceAssistant.active + " level=" + VoiceAssistant.level; }
     }
 }

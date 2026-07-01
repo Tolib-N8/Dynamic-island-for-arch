@@ -94,6 +94,28 @@ No hooks, no config. Flags for `notif_bridge.py`: `--print` (debug, don't
 forward), `--no-suppress` (leave the daemon's popups on), `--inhibit` (try the
 standard FDO Inhibit on daemons that support it, e.g. GNOME).
 
+## Voice assistant overlay (Code)
+The notch doubles as the overlay for the **"Code" voice assistant**
+(`/mnt/steam/Projects/ai-assistant`), replacing its standalone quickshell
+`overlay.qml`. The `VoiceAssistant` service holds the state and the notch morphs
+into a bars/idle/text "assistant" surface (top precedence). Driven over the
+`voice` IPC:
+
+```sh
+qs -c openagentisland-plasma ipc call voice bars     # live mic bars (was "show")
+qs -c openagentisland-plasma ipc call voice idle     # gentle idle animation
+qs -c openagentisland-plasma ipc call voice text "Открываю браузер"
+qs -c openagentisland-plasma ipc call voice hide
+qs -c openagentisland-plasma ipc call voice dump     # debug: mode/active/level
+```
+
+Live audio levels come through `/tmp/assistant_levels` (the assistant already
+writes it), polled by `VoiceAssistant` — no IPC per audio frame. The assistant
+side lives in `ai-assistant/scripts/common.py` (`overlay_cmd`/`overlay_start`/
+`overlay_stop`/`write_level` now target this IPC; config name overridable via
+`NOTCH_QS_CONFIG`). Note: `voice bars` is named `bars` not `show` because `show`
+collides with quickshell's `ipc show` subcommand.
+
 ## Known trade-offs on Plasma
 - **GlobalShortcut**: uses `hyprland_global_shortcuts_v1`, unsupported on KWin —
   bind any shortcuts through KDE System Settings instead. (Harmless warning.)

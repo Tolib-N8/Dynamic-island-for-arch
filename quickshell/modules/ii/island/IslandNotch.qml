@@ -114,7 +114,7 @@ Scope {
     Connections {
         target: AgentService
         function onPendingPermissionsChanged() {
-            if (AgentService.pendingPermissions.length > 0 && Island.openSurface === "")
+            if (AgentService.pendingPermissions.length > 0 && Island.openSurface === "" && !VoiceAssistant.active)
                 Island.open("agent", root.focusedScreenName());
             else if (AgentService.pendingPermissions.length === 0 && Island.openSurface === "agent")
                 Island.close();
@@ -169,9 +169,10 @@ Scope {
             property string expandedSource: ""  // transient OSD: volume|brightness|notification|""
             // Agent-forward: an active agent outranks media for the notch display
             // (precedence: transient OSD > agent > media). Music keeps playing.
-            property string displaySource: expandedSource !== "" ? expandedSource
+            property string displaySource: VoiceAssistant.active ? "assistant"
+                : (expandedSource !== "" ? expandedSource
                 : (AgentService.active ? "agent"
-                : (root.mediaActive ? "media" : ""))
+                : (root.mediaActive ? "media" : "")))
             // open (a named surface is up ON THIS MONITOR) outranks transient OSDs,
             // which outrank idle.
             property string islandState: notchWindow.ownsOpen ? "open"
@@ -278,6 +279,8 @@ Scope {
                     return mediaUI.implicitWidth;
                 case "agent":
                     return agentUI.implicitWidth;
+                case "assistant":
+                    return assistantUI.implicitWidth;
                 default:
                     return 0;
                 }
@@ -382,6 +385,67 @@ Scope {
                         accent: (Audio.sink?.audio?.muted ?? false) ? Qt.rgba(1, 1, 1, 0.4) : IslandStyle.accent
                     }
                     OsdPercent { value: Audio.sink?.audio?.volume ?? 0 }
+                }
+
+                // ---- voice assistant (Code) — replaces the assistant's own overlay ----
+                Item {
+                    id: assistantUI
+                    anchors.centerIn: parent
+                    opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "assistant" ? 1 : 0
+                    visible: opacity > 0
+                    Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+
+                    readonly property bool showBars: VoiceAssistant.mode === "bars" || VoiceAssistant.mode === "idle"
+                    implicitWidth: assistantUI.showBars ? barsRow.implicitWidth
+                                 : Math.min(root.expandedMaxWidth - 36, assistantText.implicitWidth)
+                    implicitHeight: 24
+
+                    property real idlePhase: 0
+                    Timer {
+                        running: VoiceAssistant.mode === "idle" && assistantUI.visible
+                        interval: 30; repeat: true
+                        onTriggered: assistantUI.idlePhase = (assistantUI.idlePhase + 0.06) % (2 * Math.PI)
+                    }
+
+                    Row {
+                        id: barsRow
+                        anchors.centerIn: parent
+                        visible: assistantUI.showBars
+                        spacing: 4
+                        readonly property int barCount: 13
+                        Repeater {
+                            model: barsRow.barCount
+                            Rectangle {
+                                required property int index
+                                width: 4
+                                radius: 2
+                                anchors.verticalCenter: parent.verticalCenter
+                                readonly property real bh: {
+                                    if (VoiceAssistant.mode === "idle")
+                                        return Math.max(2, Math.abs(Math.sin(assistantUI.idlePhase + index * 0.7)) * 20);
+                                    const dist = Math.sin((index / (barsRow.barCount - 1)) * Math.PI);
+                                    return Math.max(2, VoiceAssistant.level * dist * 20);
+                                }
+                                height: bh
+                                // cyan → violet as the bar grows (voice-assistant identity)
+                                color: {
+                                    const t = Math.min(1, bh / 20);
+                                    return Qt.rgba(0.53 * t, 0.80 - 0.53 * t, 1, 1);
+                                }
+                                Behavior on height { SmoothedAnimation { velocity: 200 } }
+                            }
+                        }
+                    }
+                    StyledText {
+                        id: assistantText
+                        anchors.centerIn: parent
+                        visible: VoiceAssistant.mode === "text"
+                        text: VoiceAssistant.text
+                        color: IslandStyle.textColor
+                        font.pixelSize: Appearance.font.pixelSize.small
+                        elide: Text.ElideRight
+                        width: Math.min(root.expandedMaxWidth - 36, implicitWidth)
+                    }
                 }
 
                 // ---- brightness ----
