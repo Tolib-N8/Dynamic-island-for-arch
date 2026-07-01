@@ -20,6 +20,7 @@ import "services"
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 
 import qs.modules.common
 import qs.modules.ii.island
@@ -38,5 +39,19 @@ ShellRoot {
     LazyLoader {
         active: Config.ready
         component: IslandNotch {}
+    }
+
+    // On Plasma there are no side islands to trigger surfaces, and KWin doesn't
+    // speak hyprland_global_shortcuts. So expose the notch over IPC — bind a KDE
+    // custom shortcut to e.g. `qs -c openagentisland-plasma ipc call island dashboard`.
+    IpcHandler {
+        target: "island"
+
+        function _screen(): string {
+            return Quickshell.screens.length > 0 ? (Quickshell.screens[0].name ?? "") : "";
+        }
+        function dashboard(): void { Island.toggle("dashboard", _screen()); }
+        function agent(): void { Island.toggle("agent", _screen()); }
+        function close(): void { Island.close(); }
     }
 }

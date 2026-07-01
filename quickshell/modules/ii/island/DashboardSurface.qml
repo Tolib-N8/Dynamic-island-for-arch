@@ -10,7 +10,7 @@ import QtQuick.Layouts
 FocusScope {
     id: surf
     property int currentTab: 0
-    readonly property var tabs: ["Widgets", "Kanban", "Coming soon"]
+    readonly property var tabs: ["Widgets", "Kanban", "System"]
 
     Keys.onPressed: (event) => {
         if (event.key === Qt.Key_Escape) {
@@ -76,11 +76,9 @@ FocusScope {
                 anchors.fill: parent
                 visible: surf.currentTab === 1
             }
-            DashboardPlaceholder {
+            SystemPane {
                 anchors.fill: parent
                 visible: surf.currentTab === 2
-                icon: "hourglass_top"
-                label: "Coming soon"
             }
         }
     }

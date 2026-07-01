@@ -56,6 +56,23 @@ cp ~/Projects/openagentisland/plasma/openagentisland-plasma.desktop ~/.config/au
 ```
 (Or add it via System Settings → Autostart → Add Application → the same command.)
 
+## Opening the notch (IPC + KDE shortcuts)
+On the Hyprland shell the side islands trigger the notch surfaces; the Plasma
+edition has no side islands and KWin doesn't speak `hyprland_global_shortcuts`, so
+the notch is driven over Quickshell IPC instead:
+
+```sh
+qs -c openagentisland-plasma ipc call island dashboard   # toggle the dashboard
+qs -c openagentisland-plasma ipc call island agent       # toggle the agent surface
+qs -c openagentisland-plasma ipc call island close       # close
+```
+
+Bind these in **System Settings → Shortcuts → Custom Shortcuts** to get a hotkey
+for the notch (e.g. Meta+/ → dashboard). The dashboard has three tabs:
+**Widgets · Kanban · System** — the *System* tab (CPU / memory / swap / battery +
+host info) is a Plasma-edition addition that replaces the resources the side
+islands used to show.
+
 ## Known trade-offs on Plasma
 - **Notifications**: Plasma owns `org.freedesktop.Notifications`, so the notch's
   notification morph stays quiet — Plasma shows notifications natively. (Warning
