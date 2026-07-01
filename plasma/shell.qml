@@ -41,8 +41,13 @@ ShellRoot {
     // execDetached) so it's tied to the notch's lifetime: if the notch stops, the
     // bridge is terminated → it restores the daemon's popups on the way out.
     Process {
+        id: notifBridge
         running: true
         command: ["python3", Quickshell.env("HOME") + "/Projects/openagentisland/bridge/notif_bridge.py"]
+        // Auto-respawn if it ever dies, so notifications (and DND restore) never
+        // get stuck. Small delay avoids a tight crash loop.
+        onExited: respawn.start()
+        Timer { id: respawn; interval: 1500; onTriggered: notifBridge.running = true }
     }
 
     // The star, and only the star.

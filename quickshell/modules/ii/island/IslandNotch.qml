@@ -26,6 +26,12 @@ import Quickshell.Services.Mpris
 Scope {
     id: root
 
+    // Off Hyprland (e.g. KWin/Plasma) the notch must NOT grab keyboard focus:
+    // a focused layer-shell surface becomes KWin's "active window", and shortcuts
+    // like Meta+Q ("Close Window") would then close the notch. Pointer input still
+    // works without keyboard focus, so clicks/toggles/allow-deny are unaffected.
+    readonly property bool onHyprland: (Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE") ?? "").length > 0
+
     readonly property list<real> goeyCurve: [0.34, 1.22, 0.64, 1, 1, 1]
     readonly property int morphDuration: 330
     readonly property int shoulderSize: 20
@@ -126,7 +132,9 @@ Scope {
             WlrLayershell.namespace: "quickshell:islandNotch"
             WlrLayershell.layer: WlrLayer.Top
             // Grab keyboard only while THIS monitor's surface is open (Esc / search typing).
-            WlrLayershell.keyboardFocus: notchWindow.ownsOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+            // Only on Hyprland — see root.onHyprland: on KWin a focused layer surface
+            // becomes the "active window" and Meta+Q would close the notch.
+            WlrLayershell.keyboardFocus: (notchWindow.ownsOpen && root.onHyprland) ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
             color: "transparent"
             // Floating island — don't reserve a strip; windows pass under it like the
             // left/right islands (wallpaper breathes through the gaps).
