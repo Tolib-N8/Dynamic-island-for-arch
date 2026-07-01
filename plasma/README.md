@@ -73,10 +73,21 @@ for the notch (e.g. Meta+/ → dashboard). The dashboard has three tabs:
 host info) is a Plasma-edition addition that replaces the resources the side
 islands used to show.
 
+## Notifications (mirrored, non-invasive)
+Plasma's `plasmashell` owns the `org.freedesktop.Notifications` D-Bus server, so
+the notch can't be the server itself. Instead of fighting for it (which would
+disable KDE's native notifications), `bridge/notif_bridge.py` becomes a passive
+D-Bus **monitor**, watches every `Notify` call, and forwards a compact line to
+the notch over `$XDG_RUNTIME_DIR/openagentisland-notif.sock`. KDE keeps showing
+its own popups; the notch mirrors them (dashboard Notifications panel + the
+notification morph). The `NotificationMirror` service holds the list; on Hyprland
+it stays empty (the built-in server is used there), so it's harmless in both shells.
+
+The bridge is launched automatically by `plasma/shell.qml` on startup
+(single-instance, fire-and-forget). No hooks, no config. To run it by hand:
+`python3 ~/Projects/openagentisland/bridge/notif_bridge.py` (`--print` to debug).
+
 ## Known trade-offs on Plasma
-- **Notifications**: Plasma owns `org.freedesktop.Notifications`, so the notch's
-  notification morph stays quiet — Plasma shows notifications natively. (Warning
-  in the log is expected/harmless.)
 - **GlobalShortcut**: uses `hyprland_global_shortcuts_v1`, unsupported on KWin —
   bind any shortcuts through KDE System Settings instead. (Harmless warning.)
 - **jump-to-terminal** is best-effort (title match) since foreign-toplevel exposes

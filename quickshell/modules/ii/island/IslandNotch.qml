@@ -246,6 +246,17 @@ Scope {
                     notchWindow.trigger("notification", 4000);
                 }
             }
+            // Mirrored (Plasma) notifications morph the notch the same way. On
+            // Hyprland this never fires (no bridge → NotificationMirror stays empty).
+            Connections {
+                target: NotificationMirror
+                function onNotified(n) {
+                    notchWindow.notifApp = n.appName ?? "";
+                    notchWindow.notifSummary = n.summary ?? "";
+                    notchWindow.notifIcon = n.appIcon ?? "";
+                    notchWindow.trigger("notification", 4000);
+                }
+            }
 
             property real contentWidth: {
                 switch (displaySource) {

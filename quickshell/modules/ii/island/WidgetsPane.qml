@@ -16,6 +16,18 @@ import Quickshell.Services.Mpris
 Item {
     id: pane
 
+    // Notification source: the built-in server (Hyprland) OR the KDE mirror
+    // (Plasma, via bridge/notif_bridge.py). They're mutually exclusive per
+    // platform, so show whichever is populated.
+    readonly property bool usingMirror: Notifications.list.length === 0 && NotificationMirror.list.length > 0
+    readonly property var notifList: pane.usingMirror ? NotificationMirror.list : Notifications.list
+    function clearNotifs() {
+        if (pane.usingMirror)
+            NotificationMirror.clear();
+        else
+            Notifications.discardAllNotifications();
+    }
+
     // ---------- reusable bits ----------
     component ToggleChip: Rectangle {
         id: chip
@@ -307,12 +319,12 @@ Item {
                                 text: "delete_sweep"
                                 iconSize: 18
                                 color: IslandStyle.subtextColor
-                                visible: Notifications.list.length > 0
-                                MouseArea { anchors.fill: parent; onClicked: Notifications.discardAllNotifications() }
+                                visible: pane.notifList.length > 0
+                                MouseArea { anchors.fill: parent; onClicked: pane.clearNotifs() }
                             }
                         }
                         ColumnLayout {
-                            visible: Notifications.list.length === 0
+                            visible: pane.notifList.length === 0
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             Item { Layout.fillHeight: true }
@@ -321,12 +333,12 @@ Item {
                             Item { Layout.fillHeight: true }
                         }
                         ListView {
-                            visible: Notifications.list.length > 0
+                            visible: pane.notifList.length > 0
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             clip: true
                             spacing: 5
-                            model: Notifications.list
+                            model: pane.notifList
                             delegate: Rectangle {
                                 required property var modelData
                                 width: ListView.view.width
@@ -355,6 +367,16 @@ Item {
                                         font.weight: Font.DemiBold
                                         color: IslandStyle.textColor
                                         elide: Text.ElideRight
+                                    }
+                                    StyledText {
+                                        Layout.fillWidth: true
+                                        visible: (modelData.body ?? "") !== ""
+                                        text: modelData.body ?? ""
+                                        font.pixelSize: Appearance.font.pixelSize.smaller
+                                        color: IslandStyle.subtextColor
+                                        elide: Text.ElideRight
+                                        maximumLineCount: 2
+                                        wrapMode: Text.WordWrap
                                     }
                                 }
                             }

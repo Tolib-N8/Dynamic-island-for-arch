@@ -33,6 +33,12 @@ ShellRoot {
     Component.onCompleted: {
         MaterialThemeLoader.reapplyTheme()   // pick up generated Material colors
         AgentService.load()                  // start the Claude Code agent bridge listener
+        NotificationMirror.socketPath        // force-instantiate → its socket server starts
+        // Mirror KDE's notifications into the notch (Plasma owns the real D-Bus
+        // notification server). The bridge is single-instance, so relaunching on
+        // reload is a no-op.
+        Quickshell.execDetached(["bash", "-c",
+            "python3 \"$HOME/Projects/openagentisland/bridge/notif_bridge.py\" >/dev/null 2>&1"])
     }
 
     // The star, and only the star.
