@@ -73,19 +73,26 @@ for the notch (e.g. Meta+/ → dashboard). The dashboard has three tabs:
 host info) is a Plasma-edition addition that replaces the resources the side
 islands used to show.
 
-## Notifications (mirrored, non-invasive)
-Plasma's `plasmashell` owns the `org.freedesktop.Notifications` D-Bus server, so
-the notch can't be the server itself. Instead of fighting for it (which would
-disable KDE's native notifications), `bridge/notif_bridge.py` becomes a passive
-D-Bus **monitor**, watches every `Notify` call, and forwards a compact line to
-the notch over `$XDG_RUNTIME_DIR/openagentisland-notif.sock`. KDE keeps showing
-its own popups; the notch mirrors them (dashboard Notifications panel + the
-notification morph). The `NotificationMirror` service holds the list; on Hyprland
-it stays empty (the built-in server is used there), so it's harmless in both shells.
+## Notifications (mirrored — the notch is the only popup)
+Another daemon owns `org.freedesktop.Notifications` (here it's
+**SwayNotificationCenter**), so the notch can't be the server itself. Instead of
+fighting for the name, `bridge/notif_bridge.py` becomes a passive D-Bus
+**monitor**: it watches every `Notify` call and forwards a compact line to the
+notch over `$XDG_RUNTIME_DIR/openagentisland-notif.sock`. The `NotificationMirror`
+service holds the list; the dashboard Notifications panel and the notch's
+notification morph render from it. On Hyprland this stays empty (the built-in
+server is used there), so it's harmless in both shells.
 
-The bridge is launched automatically by `plasma/shell.qml` on startup
-(single-instance, fire-and-forget). No hooks, no config. To run it by hand:
-`python3 ~/Projects/openagentisland/bridge/notif_bridge.py` (`--print` to debug).
+To avoid double popups (daemon + notch), while the bridge runs it puts the daemon
+in **Do-Not-Disturb** (`swaync-client -dn`) so only the notch pops — the daemon
+still records history, and notifications still traverse D-Bus so the mirror keeps
+working. This is **tied to the notch's lifetime**: the bridge runs as a managed
+`Process` in `plasma/shell.qml`, so if the notch stops, the bridge is terminated
+and **restores the daemon's popups on the way out** (`swaync-client -df`).
+
+No hooks, no config. Flags for `notif_bridge.py`: `--print` (debug, don't
+forward), `--no-suppress` (leave the daemon's popups on), `--inhibit` (try the
+standard FDO Inhibit on daemons that support it, e.g. GNOME).
 
 ## Known trade-offs on Plasma
 - **GlobalShortcut**: uses `hyprland_global_shortcuts_v1`, unsupported on KWin —

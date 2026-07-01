@@ -19,15 +19,28 @@ Run:  python3 notif_bridge.py           # mirror to the notch
       python3 notif_bridge.py --print   # debug: print to stdout, don't forward
 """
 import json
+import atexit
 import os
+import shutil
+import signal
 import socket
+import subprocess
 import sys
+import warnings
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)  # quiet PyGObject notices
 
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 
 PRINT_ONLY = "--print" in sys.argv
+# By default the notch is the ONLY popup: while this bridge runs, the desktop's
+# notification daemon is put in Do-Not-Disturb so it stops drawing its own popups
+# (notifications still traverse D-Bus → we mirror them, and the daemon keeps its
+# history). It's restored on exit, so popups return whenever the notch isn't
+# running. Pass --no-suppress to leave the daemon's popups on.
+SUPPRESS = "--no-suppress" not in sys.argv
 
 
 def notif_socket():
@@ -95,8 +108,33 @@ def handler(bus, msg):
         return  # never let a bad message kill the monitor
 
 
+_restore = None  # callable that undoes the popup suppression, run on exit
+
+
+def _swaync_dnd(on):
+    subprocess.run(["swaync-client", "-dn" if on else "-df"],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=2)
+
+
+def suppress_daemon_popups():
+    """Put the notification daemon in Do-Not-Disturb so only the notch pops,
+    and register the restore for exit. Currently supports SwayNotificationCenter
+    (swaync-client), which is what runs here; other daemons just no-op."""
+    global _restore
+    if not SUPPRESS or PRINT_ONLY:
+        return
+    try:
+        if shutil.which("swaync-client"):
+            _swaync_dnd(True)
+            _restore = lambda: _swaync_dnd(False)
+            atexit.register(lambda: _restore and _restore())
+    except Exception as e:
+        sys.stderr.write(f"notif_bridge: could not suppress daemon popups: {e}\n")
+
+
 def main():
     single_instance_or_exit()
+    suppress_daemon_popups()
     DBusGMainLoop(set_as_default=True)
     bus = dbus.SessionBus()
     # Become a passive monitor for Notify calls (non-invasive; doesn't own the name).
@@ -106,7 +144,21 @@ def main():
         ([f"interface='org.freedesktop.Notifications',member='Notify'"], dbus.UInt32(0)),
     )
     bus.add_message_filter(handler)
-    GLib.MainLoop().run()
+
+    loop = GLib.MainLoop()
+    # GLib-integrated signal handling (plain signal.signal doesn't fire reliably
+    # while blocked in the C mainloop). Quit cleanly so the DND restore runs.
+    def _quit(*_a):
+        loop.quit()
+        return GLib.SOURCE_REMOVE
+    GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGTERM, _quit)
+    GLib.unix_signal_add(GLib.PRIORITY_HIGH, signal.SIGINT, _quit)
+
+    try:
+        loop.run()
+    finally:
+        if _restore:
+            _restore()  # restore the daemon's popups on the way out
 
 
 if __name__ == "__main__":

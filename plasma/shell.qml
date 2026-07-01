@@ -34,11 +34,15 @@ ShellRoot {
         MaterialThemeLoader.reapplyTheme()   // pick up generated Material colors
         AgentService.load()                  // start the Claude Code agent bridge listener
         NotificationMirror.socketPath        // force-instantiate → its socket server starts
-        // Mirror KDE's notifications into the notch (Plasma owns the real D-Bus
-        // notification server). The bridge is single-instance, so relaunching on
-        // reload is a no-op.
-        Quickshell.execDetached(["bash", "-c",
-            "python3 \"$HOME/Projects/openagentisland/bridge/notif_bridge.py\" >/dev/null 2>&1"])
+    }
+
+    // Mirror the desktop's notifications into the notch, and put the real daemon in
+    // Do-Not-Disturb so the notch is the only popup. Run as a managed Process (not
+    // execDetached) so it's tied to the notch's lifetime: if the notch stops, the
+    // bridge is terminated → it restores the daemon's popups on the way out.
+    Process {
+        running: true
+        command: ["python3", Quickshell.env("HOME") + "/Projects/openagentisland/bridge/notif_bridge.py"]
     }
 
     // The star, and only the star.
