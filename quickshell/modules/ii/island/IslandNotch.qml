@@ -289,7 +289,9 @@ Scope {
                 : islandState === "expanded" ? (displaySource === "agent" ? (root.mediaActive ? 264 : 224) : Math.min(root.expandedMaxWidth, contentWidth + 36))
                 : 180
             property real targetHeight: islandState === "open" ? (root.surfaceSizes[Island.openSurface]?.h ?? root.maxHeight)
-                : islandState === "expanded" ? (displaySource === "media" || displaySource === "agent" ? 40 : 54)
+                : islandState === "expanded" ? (
+                    displaySource === "assistant" ? Math.max(44, assistantUI.implicitHeight + 26) // 13 top + 13 bottom
+                    : (displaySource === "media" || displaySource === "agent" ? 40 : 54))
                 : 36
 
             // Full-screen click-catcher (only while open). Sits BEHIND the notch
@@ -390,15 +392,18 @@ Scope {
                 // ---- voice assistant (Code) — replaces the assistant's own overlay ----
                 Item {
                     id: assistantUI
-                    anchors.centerIn: parent
+                    // Top-anchored (not centred) so a tall wrapped text can't overflow
+                    // past the notch's top edge — it grows DOWNWARD instead.
+                    anchors.top: parent.top
+                    anchors.topMargin: 13
+                    anchors.horizontalCenter: parent.horizontalCenter
                     opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "assistant" ? 1 : 0
                     visible: opacity > 0
                     Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 
                     readonly property bool showBars: VoiceAssistant.mode === "bars" || VoiceAssistant.mode === "idle"
-                    implicitWidth: assistantUI.showBars ? barsRow.implicitWidth
-                                 : Math.min(root.expandedMaxWidth - 36, assistantText.implicitWidth)
-                    implicitHeight: 24
+                    implicitWidth: assistantUI.showBars ? barsRow.implicitWidth : assistantText.width
+                    implicitHeight: assistantUI.showBars ? 24 : assistantText.paintedHeight
 
                     property real idlePhase: 0
                     Timer {
@@ -436,6 +441,13 @@ Scope {
                             }
                         }
                     }
+                    // Natural (unwrapped) text width, measured independently so binding
+                    // `width` to it can't loop.
+                    TextMetrics {
+                        id: assistantTextMetrics
+                        font: assistantText.font
+                        text: VoiceAssistant.text
+                    }
                     StyledText {
                         id: assistantText
                         anchors.centerIn: parent
@@ -443,8 +455,13 @@ Scope {
                         text: VoiceAssistant.text
                         color: IslandStyle.textColor
                         font.pixelSize: Appearance.font.pixelSize.small
+                        horizontalAlignment: Text.AlignHCenter
+                        // One line while it fits; once it hits the cap it wraps by word
+                        // and the notch grows DOWN (see implicitHeight + targetHeight).
+                        wrapMode: Text.WordWrap
+                        width: Math.min(assistantTextMetrics.advanceWidth + 2, root.expandedMaxWidth - 40)
+                        maximumLineCount: 6
                         elide: Text.ElideRight
-                        width: Math.min(root.expandedMaxWidth - 36, implicitWidth)
                     }
                 }
 
