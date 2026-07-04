@@ -116,6 +116,14 @@ side lives in `ai-assistant/scripts/common.py` (`overlay_cmd`/`overlay_start`/
 `NOTCH_QS_CONFIG`). Note: `voice bars` is named `bars` not `show` because `show`
 collides with quickshell's `ipc show` subcommand.
 
+## Icon theme (notification icons)
+Notification cards resolve their icon via the Qt icon theme. Quickshell only picks
+up the KDE icon theme (from `kdeglobals`) when it loads the KDE platform theme
+plugin, so the notch must be started with **`QT_QPA_PLATFORMTHEME=kde`** —
+otherwise theme icons (e.g. the USB "device detected" icon) render as a magenta
+"missing icon" square. The autostart `.desktop` sets this (`env
+QT_QPA_PLATFORMTHEME=kde qs …`); launch it the same way if starting by hand.
+
 ## Known trade-offs on Plasma
 - **GlobalShortcut**: uses `hyprland_global_shortcuts_v1`, unsupported on KWin —
   bind any shortcuts through KDE System Settings instead. (Harmless warning.)

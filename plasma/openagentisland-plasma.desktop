@@ -2,7 +2,7 @@
 Type=Application
 Name=OpenAgentIsland (Plasma notch)
 Comment=Central morphing notch + Claude Code agent bridge, for KDE Plasma Wayland
-Exec=qs -n -c openagentisland-plasma
+Exec=env QT_QPA_PLATFORMTHEME=kde qs -n -c openagentisland-plasma
 X-KDE-autostart-phase=2
 OnlyShowIn=KDE;
 NoDisplay=false
