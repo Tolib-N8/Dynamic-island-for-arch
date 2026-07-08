@@ -27,6 +27,20 @@ Item {
         else
             Notifications.discardAllNotifications();
     }
+    // Click a notification row → invoke its "default" action (open the app / follow
+    // the notification). Only works for the built-in server's notifications.
+    function openNotif(nobj) {
+        if (pane.usingMirror || !nobj || !nobj.notificationId)
+            return;
+        const acts = nobj.actions ?? [];
+        let id = "";
+        for (let i = 0; i < acts.length; i++)
+            if (acts[i].identifier === "default") { id = "default"; break; }
+        if (id === "" && acts.length > 0)
+            id = acts[0].identifier;
+        if (id !== "")
+            Notifications.attemptInvokeAction(nobj.notificationId, id);
+    }
 
     // ---------- reusable bits ----------
     component ToggleChip: Rectangle {
@@ -340,11 +354,24 @@ Item {
                             spacing: 5
                             model: pane.notifList
                             delegate: Rectangle {
+                                id: notifRow
                                 required property var modelData
+                                readonly property bool clickable: !pane.usingMirror && (modelData?.actions?.length ?? 0) > 0
                                 width: ListView.view.width
                                 implicitHeight: ncol.implicitHeight + 12
                                 radius: 8
-                                color: Qt.rgba(1, 1, 1, 0.05)
+                                color: notifMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(1, 1, 1, 0.05)
+                                Behavior on color { ColorAnimation { duration: 100 } }
+                                MouseArea {
+                                    id: notifMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: notifRow.clickable
+                                    cursorShape: notifRow.clickable ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                    onClicked: {
+                                        pane.openNotif(notifRow.modelData);
+                                        Island.close();   // dismiss the dashboard after acting
+                                    }
+                                }
                                 ColumnLayout {
                                     id: ncol
                                     anchors.left: parent.left
