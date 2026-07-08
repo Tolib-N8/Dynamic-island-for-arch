@@ -191,6 +191,23 @@ Scope {
             property string notifApp: ""
             property string notifSummary: ""
             property string notifIcon: ""
+            property string notifDesktopEntry: ""
+
+            // Click a notification → focus the source app if it's running, else launch it.
+            function activateNotifApp() {
+                const wanted = (notchWindow.notifDesktopEntry || notchWindow.notifApp || "").toLowerCase();
+                if (wanted.length === 0)
+                    return;
+                for (const t of (ToplevelManager.toplevels?.values ?? [])) {
+                    const aid = (t.appId || "").toLowerCase();
+                    if (aid.length > 0 && (aid === wanted || aid.indexOf(wanted) !== -1 || wanted.indexOf(aid) !== -1)) {
+                        t.activate();
+                        return;
+                    }
+                }
+                if (notchWindow.notifDesktopEntry.length > 0)
+                    Quickshell.execDetached(["gtk-launch", notchWindow.notifDesktopEntry]);
+            }
             readonly property var brightnessMonitor: Brightness.getMonitorForScreen(notchWindow.screen)
 
             // attention flash when a NEW permission arrives
@@ -252,6 +269,7 @@ Scope {
                     notchWindow.notifApp = notification.appName ?? "";
                     notchWindow.notifSummary = notification.summary ?? "";
                     notchWindow.notifIcon = notification.appIcon ?? "";
+                    notchWindow.notifDesktopEntry = notification.desktopEntry ?? "";
                     notchWindow.trigger("notification", 4000);
                 }
             }
@@ -263,6 +281,7 @@ Scope {
                     notchWindow.notifApp = n.appName ?? "";
                     notchWindow.notifSummary = n.summary ?? "";
                     notchWindow.notifIcon = n.appIcon ?? "";
+                    notchWindow.notifDesktopEntry = n.desktopEntry ?? "";
                     notchWindow.trigger("notification", 4000);
                 }
             }
@@ -352,6 +371,15 @@ Scope {
                     // surface is open, surfaceHost's absorber catches clicks (no
                     // accidental close); close via Esc or re-clicking the trigger pill.
                     onClicked: {
+                        // Clicking a notification focuses/launches its source app, then
+                        // dismisses the morph. (The real per-notification action can't be
+                        // invoked from here: swaync disables action-invoke under DND, which
+                        // the notif bridge keeps on to suppress swaync's own popups.)
+                        if (notchWindow.displaySource === "notification") {
+                            notchWindow.activateNotifApp();
+                            notchWindow.expandedSource = "";
+                            return;
+                        }
                         // open on THIS monitor (moves the surface here if another had it)
                         Island.open(notchWindow.displaySource === "agent" ? "agent" : "dashboard",
                                     notchWindow.screen.name);
