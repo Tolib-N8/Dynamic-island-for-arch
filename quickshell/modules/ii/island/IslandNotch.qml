@@ -191,22 +191,21 @@ Scope {
             property string notifApp: ""
             property string notifSummary: ""
             property string notifIcon: ""
-            property string notifDesktopEntry: ""
+            property int notifId: 0
+            property var notifActions: []
 
-            // Click a notification → focus the source app if it's running, else launch it.
-            function activateNotifApp() {
-                const wanted = (notchWindow.notifDesktopEntry || notchWindow.notifApp || "").toLowerCase();
-                if (wanted.length === 0)
-                    return;
-                for (const t of (ToplevelManager.toplevels?.values ?? [])) {
-                    const aid = (t.appId || "").toLowerCase();
-                    if (aid.length > 0 && (aid === wanted || aid.indexOf(wanted) !== -1 || wanted.indexOf(aid) !== -1)) {
-                        t.activate();
-                        return;
-                    }
-                }
-                if (notchWindow.notifDesktopEntry.length > 0)
-                    Quickshell.execDetached(["gtk-launch", notchWindow.notifDesktopEntry]);
+            // Click a notification → invoke its "default" action (open the app / follow
+            // the notification), or the first action if there's no explicit default.
+            // Works because the notch is the notification server (swaync disabled).
+            function invokeNotifAction() {
+                const acts = notchWindow.notifActions ?? [];
+                let id = "";
+                for (let i = 0; i < acts.length; i++)
+                    if (acts[i].identifier === "default") { id = "default"; break; }
+                if (id === "" && acts.length > 0)
+                    id = acts[0].identifier;
+                if (id !== "" && notchWindow.notifId > 0)
+                    Notifications.attemptInvokeAction(notchWindow.notifId, id);
             }
             readonly property var brightnessMonitor: Brightness.getMonitorForScreen(notchWindow.screen)
 
@@ -269,7 +268,8 @@ Scope {
                     notchWindow.notifApp = notification.appName ?? "";
                     notchWindow.notifSummary = notification.summary ?? "";
                     notchWindow.notifIcon = notification.appIcon ?? "";
-                    notchWindow.notifDesktopEntry = notification.desktopEntry ?? "";
+                    notchWindow.notifId = notification.notificationId ?? 0;
+                    notchWindow.notifActions = notification.actions ?? [];
                     notchWindow.trigger("notification", 4000);
                 }
             }
@@ -281,7 +281,8 @@ Scope {
                     notchWindow.notifApp = n.appName ?? "";
                     notchWindow.notifSummary = n.summary ?? "";
                     notchWindow.notifIcon = n.appIcon ?? "";
-                    notchWindow.notifDesktopEntry = n.desktopEntry ?? "";
+                    notchWindow.notifId = 0;          // mirrored notifs have no invokable action
+                    notchWindow.notifActions = [];
                     notchWindow.trigger("notification", 4000);
                 }
             }
@@ -371,12 +372,11 @@ Scope {
                     // surface is open, surfaceHost's absorber catches clicks (no
                     // accidental close); close via Esc or re-clicking the trigger pill.
                     onClicked: {
-                        // Clicking a notification focuses/launches its source app, then
-                        // dismisses the morph. (The real per-notification action can't be
-                        // invoked from here: swaync disables action-invoke under DND, which
-                        // the notif bridge keeps on to suppress swaync's own popups.)
+                        // Clicking a notification invokes its default action (open the app /
+                        // follow the notification) — the notch is the notification server,
+                        // so actions work natively — then dismisses the morph.
                         if (notchWindow.displaySource === "notification") {
-                            notchWindow.activateNotifApp();
+                            notchWindow.invokeNotifAction();
                             notchWindow.expandedSource = "";
                             return;
                         }

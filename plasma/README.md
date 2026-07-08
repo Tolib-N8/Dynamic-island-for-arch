@@ -73,26 +73,31 @@ for the notch (e.g. Meta+/ → dashboard). The dashboard has three tabs:
 host info) is a Plasma-edition addition that replaces the resources the side
 islands used to show.
 
-## Notifications (mirrored — the notch is the only popup)
-Another daemon owns `org.freedesktop.Notifications` (here it's
-**SwayNotificationCenter**), so the notch can't be the server itself. Instead of
-fighting for the name, `bridge/notif_bridge.py` becomes a passive D-Bus
-**monitor**: it watches every `Notify` call and forwards a compact line to the
-notch over `$XDG_RUNTIME_DIR/openagentisland-notif.sock`. The `NotificationMirror`
-service holds the list; the dashboard Notifications panel and the notch's
-notification morph render from it. On Hyprland this stays empty (the built-in
-server is used there), so it's harmless in both shells.
+## Notifications (the notch IS the server)
+The notch's built-in `Notifications` service owns `org.freedesktop.Notifications`
+directly, so notifications arrive natively — with **actions**: clicking a
+notification in the notch invokes its default action (open the app / follow the
+notification) via `Notifications.attemptInvokeAction`. No popup duplication, no
+mirror bridge, no Do-Not-Disturb.
 
-To avoid double popups (daemon + notch), while the bridge runs it puts the daemon
-in **Do-Not-Disturb** (`swaync-client -dn`) so only the notch pops — the daemon
-still records history, and notifications still traverse D-Bus so the mirror keeps
-working. This is **tied to the notch's lifetime**: the bridge runs as a managed
-`Process` in `plasma/shell.qml`, so if the notch stops, the bridge is terminated
-and **restores the daemon's popups on the way out** (`swaync-client -df`).
+For this the previous daemon (**SwayNotificationCenter**) must not hold the name.
+swaync is a D-Bus-activated systemd unit (`BusName=org.freedesktop.Notifications`,
+`Restart=on-failure`), so stopping it isn't enough — it must be **masked**:
 
-No hooks, no config. Flags for `notif_bridge.py`: `--print` (debug, don't
-forward), `--no-suppress` (leave the daemon's popups on), `--inhibit` (try the
-standard FDO Inhibit on daemons that support it, e.g. GNOME).
+```sh
+systemctl --user mask swaync.service   # reversible: `unmask`
+systemctl --user stop swaync.service
+pkill -x swaync
+```
+
+Then the running notch grabs the name (it retries whenever the name frees).
+Trade-off: the notch becomes the *only* notification server, so **notifications
+are lost while the notch isn't running** (there's no fallback daemon). The
+autostart entry starts it on login; if you want swaync back, `unmask` + start it
+and revert the notch to a passive mirror.
+
+(An earlier mirror approach — `bridge/notif_bridge.py` snooping D-Bus + swaync in
+DND — is kept in the repo for reference but no longer wired in `plasma/shell.qml`.)
 
 ## Voice assistant overlay (Code)
 The notch doubles as the overlay for the **"Code" voice assistant**
