@@ -7,6 +7,31 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**PLASMA EDITION — feature-complete and user-verified (2026-07-09).** Everything
+below is live, pushed to the Tolib-N8 fork, and confirmed working by the user:
+
+- **Island-style kscreenlocker theme** (`plasma/lockscreen/` +
+  `install-lockscreen.sh`): notch clock pill + password pill, with a **seamless
+  notch handoff** — the lock pill starts/ends at the desktop notch's exact idle
+  geometry (180×36, r18), so lock reads as the notch growing into the clock and
+  unlock shrinks it back into the real desktop notch. A true QS locker is
+  IMPOSSIBLE on KWin (no ext-session-lock-v1 in the registry — verified).
+  Gotchas: KPackage rejects symlinks outside the package root, and a partial
+  user shell-package breaks resolution entirely (would break plasmashell) — only
+  a full real copy of org.kde.plasma.desktop works; re-run the install script
+  after Plasma upgrades. Preview: `kscreenlocker_greet --testing`.
+- **Notch = notification server** (swaync masked): native actions, click a
+  notification (morph or dashboard panel row) → invoke its default action;
+  newest-first panel; icons need `QT_QPA_PLATFORMTHEME=kde` (set in autostart).
+- **Voice assistant overlay**: notch is the Code assistant's overlay (voice IPC:
+  bars/idle/text/hide/level; `show` collides with `ipc show` — renamed `bars`);
+  levels polled from /tmp/assistant_levels (onLoaded signal, NOT onLoadedChanged);
+  assistant PTT rewritten pynput→evdev (Wayland), key = Right Ctrl (Fn is
+  firmware-level, invisible to evdev).
+- Meta+Q no longer closes the notch (no keyboard focus off-Hyprland); notif
+  bridge legacy kept for reference but unwired.
+
+**Earlier phase (2026-07-01):**
 **PLASMA EDITION (Variant A: notch-only) — WORKING + VERIFIED on KDE Plasma
 Wayland/KWin (2026-07-01).** A separate Quickshell config root at `plasma/`
 renders only the central morphing notch + the agent bridge, to run alongside
