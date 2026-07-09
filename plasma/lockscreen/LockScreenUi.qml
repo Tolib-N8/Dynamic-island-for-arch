@@ -54,7 +54,10 @@ Item {
 
         function onSucceeded() {
             if (authenticator.hadPrompt) {
-                Qt.quit();
+                // OpenAgentIsland unlock animation: quick exit morph, then quit.
+                // unlockSafetyTimer guarantees quit even if the animation stalls.
+                unlockSafetyTimer.start();
+                unlockExitAnim.start();
             } else {
                 mainStack.replace(null, Qt.resolvedUrl("NoPasswordUnlock.qml"),
                     {
@@ -102,6 +105,43 @@ Item {
     RejectPasswordAnimation {
         id: rejectPasswordAnimation
         target: mainBlock
+    }
+
+    // ---- OpenAgentIsland unlock animation ----
+    // The notch retracts up past the edge while everything fades — fast (≈260ms),
+    // so it reads as an animation, not lag. Qt.quit() runs when it finishes.
+    SequentialAnimation {
+        id: unlockExitAnim
+        ParallelAnimation {
+            NumberAnimation {
+                target: islandNotch
+                property: "anchors.topMargin"
+                to: -islandNotch.height
+                duration: 240
+                easing.type: Easing.InQuad
+            }
+            NumberAnimation {
+                target: lockScreenRoot
+                property: "opacity"
+                to: 0
+                duration: 260
+                easing.type: Easing.InQuad
+            }
+            NumberAnimation {
+                target: mainStackRise
+                property: "y"
+                to: Kirigami.Units.gridUnit * 1.5
+                duration: 260
+                easing.type: Easing.InQuad
+            }
+        }
+        ScriptAction { script: Qt.quit() }
+    }
+    // Unlocking must never hang on a stuck animation: hard-quit shortly after.
+    Timer {
+        id: unlockSafetyTimer
+        interval: 600
+        onTriggered: Qt.quit()
     }
 
     MouseArea {
@@ -210,6 +250,7 @@ Item {
         Rectangle {
             id: islandNotch
             anchors.top: parent.top
+            anchors.topMargin: -height   // starts hidden; slides down on lock
             anchors.horizontalCenter: parent.horizontalCenter
             width: notchContent.implicitWidth + 64
             height: notchContent.implicitHeight + 24
@@ -219,6 +260,20 @@ Item {
             bottomLeftRadius: 18
             bottomRightRadius: 18
             z: 10
+
+            // Lock (entrance): slide down from the screen edge with the island's
+            // signature goey overshoot.
+            Component.onCompleted: notchEntrance.start()
+            NumberAnimation {
+                id: notchEntrance
+                target: islandNotch
+                property: "anchors.topMargin"
+                from: -islandNotch.height
+                to: 0
+                duration: 480
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: [0.34, 1.22, 0.64, 1, 1, 1]
+            }
 
             property date now: new Date()
             Timer {
@@ -299,6 +354,21 @@ Item {
             }
             height: lockScreenRoot.height + Kirigami.Units.gridUnit * 3
             focus: true //StackView is an implicit focus scope, so we need to give this focus so the item inside will have it
+
+            // OpenAgentIsland lock entrance: the auth block rises into place.
+            // (A transform, not opacity — WallpaperFader owns mainStack's opacity.)
+            transform: Translate { id: mainStackRise; y: 0 }
+            Component.onCompleted: mainStackRiseAnim.start()
+            NumberAnimation {
+                id: mainStackRiseAnim
+                target: mainStackRise
+                property: "y"
+                from: Kirigami.Units.gridUnit * 1.5
+                to: 0
+                duration: 480
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: [0.34, 1.22, 0.64, 1, 1, 1]
+            }
 
             // this isn't implicit, otherwise items still get processed for the scenegraph
             visible: opacity > 0
