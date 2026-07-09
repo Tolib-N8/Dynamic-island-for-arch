@@ -129,6 +129,28 @@ otherwise theme icons (e.g. the USB "device detected" icon) render as a magenta
 "missing icon" square. The autostart `.desktop` sets this (`env
 QT_QPA_PLATFORMTHEME=kde qs …`); launch it the same way if starting by hand.
 
+## Island-style lock screen (kscreenlocker theme)
+A true Quickshell locker is impossible on KWin (no `ext-session-lock-v1`), so the
+island look is brought to **kscreenlocker itself**: `plasma/lockscreen/` is a
+restyled copy of the stock Plasma 6 lock screen — a black notch-shaped clock pill
+top-center (rounded bottom corners, white time + grey date, exactly like the idle
+island) and the password row wrapped in a dark rounded pill. All stock behavior
+(PAM auth, fingerprint, media controls, Sleep/Switch User, virtual keyboard)
+is untouched.
+
+Install / refresh (also re-run after Plasma upgrades):
+```sh
+plasma/install-lockscreen.sh              # install
+plasma/install-lockscreen.sh uninstall    # restore stock
+/usr/lib/kscreenlocker_greet --testing    # preview without locking
+```
+The script copies the whole `org.kde.plasma.desktop` shell package to
+`~/.local/share/plasma/shells/` and overlays the theme — KPackage canonicalizes
+paths and rejects symlinks out of the package root, and a partial user copy
+breaks package resolution entirely, so a full real copy is the only safe layout.
+If the theme ever fails to load, kscreenlocker falls back to its built-in locker
+(you can always unlock).
+
 ## Known trade-offs on Plasma
 - **GlobalShortcut**: uses `hyprland_global_shortcuts_v1`, unsupported on KWin —
   bind any shortcuts through KDE System Settings instead. (Harmless warning.)
