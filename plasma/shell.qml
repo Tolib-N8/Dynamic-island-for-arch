@@ -45,6 +45,11 @@ ShellRoot {
         component: IslandNotch {}
     }
 
+    // NOTE: a Quickshell lock screen is NOT possible on Plasma — KWin does not
+    // expose the ext-session-lock-v1 protocol at all (verified via wayland-info;
+    // Plasma locks through kscreenlocker's internal mechanism instead). Attempting
+    // WlSessionLock here fails with "compositor does not support ext-session-lock-v1".
+
     // On Plasma there are no side islands to trigger surfaces, and KWin doesn't
     // speak hyprland_global_shortcuts. So expose the notch over IPC — bind a KDE
     // custom shortcut to e.g. `qs -c openagentisland-plasma ipc call island dashboard`.
