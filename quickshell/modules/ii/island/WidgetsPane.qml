@@ -20,7 +20,9 @@ Item {
     // (Plasma, via bridge/notif_bridge.py). They're mutually exclusive per
     // platform, so show whichever is populated.
     readonly property bool usingMirror: Notifications.list.length === 0 && NotificationMirror.list.length > 0
-    readonly property var notifList: pane.usingMirror ? NotificationMirror.list : Notifications.list
+    // Newest first. Notifications.list is appended oldest→newest, so reverse it;
+    // NotificationMirror.list is already newest-first.
+    readonly property var notifList: pane.usingMirror ? NotificationMirror.list : Notifications.list.slice().reverse()
     function clearNotifs() {
         if (pane.usingMirror)
             NotificationMirror.clear();
