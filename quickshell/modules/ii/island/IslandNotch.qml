@@ -417,6 +417,52 @@ Scope {
                     OsdPercent { value: Audio.sink?.audio?.volume ?? 0 }
                 }
 
+                // ---- idle: AI quota chips (CodexBar-style remaining-limit counters) ----
+                RowLayout {
+                    id: aiUsageIdleUI
+                    anchors.centerIn: parent
+                    spacing: 10
+                    opacity: notchWindow.islandState === "idle" && AiUsage.available ? 1 : 0
+                    visible: opacity > 0
+                    Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+
+                    Repeater {
+                        model: AiUsage.providers
+                        RowLayout {
+                            id: chip
+                            required property var modelData
+                            spacing: 5
+                            StyledText {
+                                text: chip.modelData.id === "claude" ? "CL" : chip.modelData.id === "codex" ? "CX" : chip.modelData.label
+                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                font.weight: Font.DemiBold
+                                color: IslandStyle.subtextColor
+                            }
+                            // tiny remaining-quota bar, island-style
+                            Rectangle {
+                                Layout.alignment: Qt.AlignVCenter
+                                implicitWidth: 22
+                                implicitHeight: 5
+                                radius: 2.5
+                                color: Qt.rgba(1, 1, 1, 0.15)
+                                Rectangle {
+                                    height: parent.height
+                                    radius: 2.5
+                                    width: parent.width * Math.max(0, Math.min(1, (chip.modelData.remainingPct ?? 0) / 100))
+                                    color: AiUsage.levelColor(chip.modelData.remainingPct)
+                                    Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+                                }
+                            }
+                            StyledText {
+                                text: chip.modelData.remainingPct !== null && chip.modelData.remainingPct !== undefined
+                                      ? Math.round(chip.modelData.remainingPct) + "%" : "—"
+                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                color: AiUsage.levelColor(chip.modelData.remainingPct)
+                            }
+                        }
+                    }
+                }
+
                 // ---- voice assistant (Code) — replaces the assistant's own overlay ----
                 Item {
                     id: assistantUI

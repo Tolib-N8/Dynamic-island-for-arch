@@ -133,6 +133,76 @@ Item {
             }
         }
 
+        // ---- AI limits strip (CodexBar-style remaining quota) ----
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: 40
+            radius: 12
+            color: Qt.rgba(1, 1, 1, 0.05)
+            visible: AiUsage.available
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
+                spacing: 14
+                MaterialSymbol { text: "data_usage"; iconSize: 16; color: IslandStyle.subtextColor }
+                StyledText {
+                    text: "AI limits"
+                    font.pixelSize: Appearance.font.pixelSize.smaller
+                    font.weight: Font.DemiBold
+                    color: IslandStyle.subtextColor
+                }
+                Repeater {
+                    model: AiUsage.providers
+                    RowLayout {
+                        id: prov
+                        required property var modelData
+                        spacing: 6
+                        StyledText {
+                            text: prov.modelData.label
+                            font.pixelSize: Appearance.font.pixelSize.smaller
+                            font.weight: Font.DemiBold
+                            color: IslandStyle.textColor
+                        }
+                        Rectangle {
+                            Layout.alignment: Qt.AlignVCenter
+                            implicitWidth: 56
+                            implicitHeight: 6
+                            radius: 3
+                            color: Qt.rgba(1, 1, 1, 0.12)
+                            Rectangle {
+                                height: parent.height
+                                radius: 3
+                                width: parent.width * Math.max(0, Math.min(1, (prov.modelData.remainingPct ?? 0) / 100))
+                                color: AiUsage.levelColor(prov.modelData.remainingPct)
+                                Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+                            }
+                        }
+                        StyledText {
+                            text: (prov.modelData.remainingPct !== null && prov.modelData.remainingPct !== undefined
+                                   ? Math.round(prov.modelData.remainingPct) + "% left" : "—")
+                                  + (prov.modelData.estimate ? "*" : "")
+                            font.pixelSize: Appearance.font.pixelSize.smaller
+                            color: AiUsage.levelColor(prov.modelData.remainingPct)
+                        }
+                        StyledText {
+                            text: "· resets " + AiUsage.resetIn(prov.modelData)
+                                  + (prov.modelData.plan ? " · " + prov.modelData.plan : "")
+                            font.pixelSize: Appearance.font.pixelSize.smaller
+                            color: IslandStyle.subtextColor
+                        }
+                    }
+                }
+                Item { Layout.fillWidth: true }
+                StyledText {
+                    text: "* estimate"
+                    visible: AiUsage.providers.some(p => p.estimate)
+                    font.pixelSize: Appearance.font.pixelSize.smaller
+                    color: Qt.rgba(1, 1, 1, 0.35)
+                }
+            }
+        }
+
         // ---- system info strip ----
         Rectangle {
             Layout.fillWidth: true
