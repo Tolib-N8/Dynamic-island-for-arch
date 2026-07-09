@@ -108,39 +108,41 @@ Item {
     }
 
     // ---- OpenAgentIsland unlock animation ----
-    // The notch retracts up past the edge while everything fades — fast (≈260ms),
-    // so it reads as an animation, not lag. Qt.quit() runs when it finishes.
+    // Seamless handoff: the clock pill shrinks back into the desktop notch's idle
+    // geometry (same spot, same size) while the rest of the UI fades out via the
+    // stock WallpaperFader (uiVisible=false) — no competing animations. When the
+    // lock surface then disappears, the real desktop notch is sitting exactly
+    // where the pill just was, so the eye tracks one continuous notch.
     SequentialAnimation {
         id: unlockExitAnim
+        ScriptAction { script: lockScreenRoot.uiVisible = false }  // stock fade for auth UI/footer
         ParallelAnimation {
             NumberAnimation {
-                target: islandNotch
-                property: "anchors.topMargin"
-                to: -islandNotch.height
-                duration: 240
-                easing.type: Easing.InQuad
+                target: islandNotch; property: "width"
+                to: islandNotch.idleW
+                duration: 300
+                easing.type: Easing.InOutQuad
             }
             NumberAnimation {
-                target: lockScreenRoot
-                property: "opacity"
+                target: islandNotch; property: "height"
+                to: islandNotch.idleH
+                duration: 300
+                easing.type: Easing.InOutQuad
+            }
+            NumberAnimation {
+                target: notchContent; property: "opacity"
                 to: 0
-                duration: 260
-                easing.type: Easing.InQuad
-            }
-            NumberAnimation {
-                target: mainStackRise
-                property: "y"
-                to: Kirigami.Units.gridUnit * 1.5
-                duration: 260
-                easing.type: Easing.InQuad
+                duration: 180
+                easing.type: Easing.OutQuad
             }
         }
+        PauseAnimation { duration: 50 }
         ScriptAction { script: Qt.quit() }
     }
     // Unlocking must never hang on a stuck animation: hard-quit shortly after.
     Timer {
         id: unlockSafetyTimer
-        interval: 600
+        interval: 800
         onTriggered: Qt.quit()
     }
 
@@ -231,7 +233,10 @@ Item {
             property: "opacity"
             from: 0
             to: 1
-            duration: Kirigami.Units.veryLongDuration * 2
+            // OpenAgentIsland: short cross-fade — our notch pill starts at the
+            // desktop notch's exact geometry, so during this fade it overlays the
+            // identical desktop pill and the transition is invisible.
+            duration: 300
         }
 
         Component.onCompleted: launchAnimation.start();
@@ -247,13 +252,23 @@ Item {
         }
 
         // ---- OpenAgentIsland: notch-style clock pill, top-center like the island ----
+        // Seamless handoff with the desktop island: the pill starts (on lock) and
+        // ends (on unlock) at the EXACT geometry of the desktop notch's idle pill
+        // (180×36, radius 18, flush top-center) — so locking reads as the desktop
+        // notch growing into the clock, and unlocking as it shrinking back into
+        // the very notch that is revealed when the lock surface goes away.
         Rectangle {
             id: islandNotch
             anchors.top: parent.top
-            anchors.topMargin: -height   // starts hidden; slides down on lock
             anchors.horizontalCenter: parent.horizontalCenter
-            width: notchContent.implicitWidth + 64
-            height: notchContent.implicitHeight + 24
+            readonly property real idleW: 180   // keep in sync with IslandNotch idle
+            readonly property real idleH: 36
+            // Full pill must be clearly WIDER than idle so the morph grows in both
+            // axes (the date line can be narrower than 180px).
+            readonly property real fullW: Math.max(idleW + 72, notchContent.implicitWidth + 64)
+            readonly property real fullH: notchContent.implicitHeight + 24
+            width: idleW
+            height: idleH
             color: "#000000"
             topLeftRadius: 0
             topRightRadius: 0
@@ -261,18 +276,43 @@ Item {
             bottomRightRadius: 18
             z: 10
 
-            // Lock (entrance): slide down from the screen edge with the island's
-            // signature goey overshoot.
+            // Lock (entrance): grow from the desktop notch's idle pill into the
+            // clock with the island's goey overshoot; content fades in en route.
             Component.onCompleted: notchEntrance.start()
-            NumberAnimation {
+            SequentialAnimation {
                 id: notchEntrance
-                target: islandNotch
-                property: "anchors.topMargin"
-                from: -islandNotch.height
-                to: 0
-                duration: 480
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: [0.34, 1.22, 0.64, 1, 1, 1]
+                // Hold the idle pill through the surface cross-fade (launchAnimation,
+                // 300ms) so it visually IS the desktop notch, then grow.
+                PauseAnimation { duration: 220 }
+                ParallelAnimation {
+                    NumberAnimation {
+                        target: islandNotch; property: "width"
+                        from: islandNotch.idleW; to: islandNotch.fullW
+                        duration: 480
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: [0.34, 1.22, 0.64, 1, 1, 1]
+                    }
+                    NumberAnimation {
+                        target: islandNotch; property: "height"
+                        from: islandNotch.idleH; to: islandNotch.fullH
+                        duration: 480
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: [0.34, 1.22, 0.64, 1, 1, 1]
+                    }
+                    NumberAnimation {
+                        target: notchContent; property: "opacity"
+                        from: 0; to: 1
+                        duration: 320
+                        easing.type: Easing.OutQuad
+                    }
+                }
+                // Re-bind so the pill keeps tracking content size (date changes etc.)
+                ScriptAction {
+                    script: {
+                        islandNotch.width = Qt.binding(() => islandNotch.fullW);
+                        islandNotch.height = Qt.binding(() => islandNotch.fullH);
+                    }
+                }
             }
 
             property date now: new Date()
@@ -287,6 +327,7 @@ Item {
                 id: notchContent
                 anchors.centerIn: parent
                 spacing: 0
+                opacity: 0   // fades in with the entrance morph
 
                 Text {
                     Layout.alignment: Qt.AlignHCenter
@@ -354,21 +395,6 @@ Item {
             }
             height: lockScreenRoot.height + Kirigami.Units.gridUnit * 3
             focus: true //StackView is an implicit focus scope, so we need to give this focus so the item inside will have it
-
-            // OpenAgentIsland lock entrance: the auth block rises into place.
-            // (A transform, not opacity — WallpaperFader owns mainStack's opacity.)
-            transform: Translate { id: mainStackRise; y: 0 }
-            Component.onCompleted: mainStackRiseAnim.start()
-            NumberAnimation {
-                id: mainStackRiseAnim
-                target: mainStackRise
-                property: "y"
-                from: Kirigami.Units.gridUnit * 1.5
-                to: 0
-                duration: 480
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: [0.34, 1.22, 0.64, 1, 1, 1]
-            }
 
             // this isn't implicit, otherwise items still get processed for the scenegraph
             visible: opacity > 0
