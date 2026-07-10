@@ -251,6 +251,25 @@ Item {
             alwaysShowClock: config.alwaysShowClock && !config.hideClockWhenIdle
         }
 
+        // ---- OpenAgentIsland: concave shoulders — the pill flows into the top edge
+        // exactly like the desktop island (they ride the pill's edges during morphs).
+        NotchShoulder {
+            leftSide: true
+            size: 20
+            anchors.right: islandNotch.left
+            anchors.rightMargin: -1
+            anchors.top: parent.top
+            z: islandNotch.z
+        }
+        NotchShoulder {
+            leftSide: false
+            size: 20
+            anchors.left: islandNotch.right
+            anchors.leftMargin: -1
+            anchors.top: parent.top
+            z: islandNotch.z
+        }
+
         // ---- OpenAgentIsland: notch-style clock pill, top-center like the island ----
         // Seamless handoff with the desktop island: the pill starts (on lock) and
         // ends (on unlock) at the EXACT geometry of the desktop notch's idle pill

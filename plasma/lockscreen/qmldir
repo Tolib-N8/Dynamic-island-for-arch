@@ -2,3 +2,4 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 singleton PasswordSync 1.0 PasswordSync.qml
+NotchShoulder 1.0 NotchShoulder.qml
