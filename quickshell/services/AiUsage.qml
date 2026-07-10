@@ -66,6 +66,32 @@ Singleton {
             pollProc.running = true;
     }
 
+    // Warn (once per reset window) when a provider's remaining quota drops to
+    // the red zone. Sent as a regular desktop notification — the notch is the
+    // notification server, so it morphs like any other notification.
+    property int warnThreshold: 15
+    property var _warnedWindows: ({})
+
+    function _maybeWarn() {
+        const warned = root._warnedWindows;
+        for (let i = 0; i < root.providers.length; i++) {
+            const p = root.providers[i];
+            if (p.remainingPct === null || p.remainingPct === undefined)
+                continue;
+            if (p.remainingPct > root.warnThreshold)
+                continue;
+            const key = p.id + ":" + (p.resetsAt ?? "na");
+            if (warned[key])
+                continue;
+            warned[key] = true;
+            const left = root.saturated(p) ? "at max" : Math.round(p.remainingPct) + "% left";
+            Quickshell.execDetached(["notify-send", "-a", "AI Limits", "-i", "data_usage",
+                `${p.label}: ${left}${p.estimate ? " (estimate)" : ""}`,
+                `resets in ${root.resetIn(p) || "?"} · ${p.plan || ""}`]);
+        }
+        root._warnedWindows = warned;
+    }
+
     Process {
         id: pollProc
         command: ["python3", `${Directories.scriptPath}/ai/usage_poll.py`.replace(/file:\/\//, "")]
@@ -76,6 +102,7 @@ Singleton {
                     if (d && d.providers) {
                         root.providers = d.providers;
                         root.lastUpdated = Date.now();
+                        root._maybeWarn();
                     }
                 } catch (e) {}
             }

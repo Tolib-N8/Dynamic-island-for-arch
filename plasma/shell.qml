@@ -39,10 +39,17 @@ ShellRoot {
     // org.freedesktop.Notifications when swaync is disabled), so there's no mirror
     // bridge and no Do-Not-Disturb — notifications arrive natively, with actions.
 
-    // The star, and only the star.
+    // The star.
     LazyLoader {
         active: Config.ready
         component: IslandNotch {}
+    }
+
+    // Right island: resources · clock · battery · system tray · wifi/bt.
+    // Zero Hyprland dependencies — first step toward replacing the KDE panel.
+    LazyLoader {
+        active: Config.ready
+        component: IslandRight {}
     }
 
     // NOTE: a Quickshell lock screen is NOT possible on Plasma — KWin does not
