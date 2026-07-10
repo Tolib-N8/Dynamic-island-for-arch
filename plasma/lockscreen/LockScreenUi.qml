@@ -149,6 +149,12 @@ Item {
     MouseArea {
         id: lockScreenRoot
 
+        // OpenAgentIsland: start INVISIBLE. Without this, the first frame(s)
+        // between the window mapping and launchAnimation's first tick render at
+        // the default opacity 1 — a bright full-UI flash, then a jump to black,
+        // then the fade ("blinking"). launchAnimation still fades 0 → 1.
+        opacity: 0
+
         property bool uiVisible: false
         property bool seenPositionChange: false
         property bool blockUI: containsMouse && (mainStack.depth > 1 || mainBlock.mainPasswordBox.text.length > 0 || inputPanel.keyboardActive)
