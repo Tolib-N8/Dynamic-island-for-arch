@@ -21,6 +21,11 @@ import Quickshell.Services.SystemTray
 Scope {
     id: root
 
+    // Off Hyprland (Plasma edition) some pieces are dead weight: the gear opens
+    // the right sidebar (not loaded there) and the capture pen opens the tools
+    // surface — hidden per user preference.
+    readonly property bool onHyprland: (Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE") ?? "").length > 0
+
     readonly property int ringSize: 26
 
     // Circular metric: progress ring with a metric icon centred (no numbers).
@@ -247,8 +252,9 @@ Scope {
                             }
                         }
 
-                        // Settings gear → right sidebar
+                        // Settings gear → right sidebar (Hyprland only: no sidebar on Plasma)
                         MaterialSymbol {
+                            visible: root.onHyprland
                             Layout.alignment: Qt.AlignVCenter
                             text: "settings"
                             iconSize: 19
@@ -266,6 +272,7 @@ Scope {
                 // ---- Pill 4: capture (pencil → tools surface) ----
                 Pill {
                     id: capturePill
+                    visible: root.onHyprland   // hidden on Plasma (user preference)
                     height: parent.height
                     width: parent.height
 
