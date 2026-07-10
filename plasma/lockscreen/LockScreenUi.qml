@@ -357,12 +357,24 @@ Item {
                 spacing: 0
                 opacity: 0   // fades in with the entrance morph
 
-                Text {
+                RowLayout {
                     Layout.alignment: Qt.AlignHCenter
-                    text: islandNotch.now.toLocaleTimeString(Qt.locale(), "h:mm")
-                    color: "#FFFFFF"
-                    font.pixelSize: 30
-                    font.weight: Font.DemiBold
+                    spacing: 9
+
+                    // A quiet padlock so the state is unmistakable at a glance.
+                    Kirigami.Icon {
+                        Layout.alignment: Qt.AlignVCenter
+                        Layout.preferredWidth: 17
+                        Layout.preferredHeight: 17
+                        source: "lock"
+                        color: "#9AA0AA"
+                    }
+                    Text {
+                        text: islandNotch.now.toLocaleTimeString(Qt.locale(), "h:mm")
+                        color: "#FFFFFF"
+                        font.pixelSize: 30
+                        font.weight: Font.DemiBold
+                    }
                 }
                 Text {
                     Layout.alignment: Qt.AlignHCenter
