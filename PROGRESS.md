@@ -7,6 +7,21 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-10: AI quota tracker + lockscreen polish — user-verified.**
+- **CodexBar-style AI limits in the notch** (`scripts/ai/usage_poll.py` +
+  `services/AiUsage.qml`): Codex = EXACT subscription percentages parsed from
+  ~/.codex/sessions rollout jsonl rate_limits events; Claude = 5h-block estimate
+  via npx ccusage (tokens vs largest completed block; JSON output never fills
+  tokenLimitStatus — ceiling computed ourselves; 5-min cache, failures never
+  cached — stale beats blank; between-blocks → 100% left). UI: idle-notch chips
+  + "AI limits" strip in the System tab; saturated estimates render orange
+  "at max*", not red "0% left".
+- **Lockscreen concave shoulders** (`NotchShoulder.qml`): island's RoundCorner
+  fillet ported (no qs deps), registered in the theme qmldir (dir has a qmldir →
+  implicit same-dir types don't resolve). Shoulders ride the pill during morphs;
+  lock/desktop notches are now shape-identical.
+
+## Earlier: 
 **PLASMA EDITION — feature-complete and user-verified (2026-07-09).** Everything
 below is live, pushed to the Tolib-N8 fork, and confirmed working by the user:
 
