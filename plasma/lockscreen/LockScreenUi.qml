@@ -233,10 +233,13 @@ Item {
             property: "opacity"
             from: 0
             to: 1
-            // OpenAgentIsland: short cross-fade — our notch pill starts at the
-            // desktop notch's exact geometry, so during this fade it overlays the
-            // identical desktop pill and the transition is invisible.
-            duration: 300
+            // OpenAgentIsland: unhurried fade-in from the compositor's security
+            // blackout, so the black moment reads as the START of the lock
+            // choreography (dark → wallpaper blooms → notch grows) instead of a
+            // glitch. The notch pill starts at the desktop notch's exact geometry,
+            // so it overlays the identical desktop pill as it fades in.
+            duration: 550
+            easing.type: Easing.OutQuad
         }
 
         Component.onCompleted: launchAnimation.start();
@@ -300,9 +303,9 @@ Item {
             Component.onCompleted: notchEntrance.start()
             SequentialAnimation {
                 id: notchEntrance
-                // Hold the idle pill through the surface cross-fade (launchAnimation,
-                // 300ms) so it visually IS the desktop notch, then grow.
-                PauseAnimation { duration: 220 }
+                // Hold the idle pill through the surface fade-in (launchAnimation,
+                // 550ms) so it visually IS the desktop notch, then grow.
+                PauseAnimation { duration: 470 }
                 ParallelAnimation {
                     NumberAnimation {
                         target: islandNotch; property: "width"
