@@ -134,7 +134,9 @@ Scope {
             // Grab keyboard only while THIS monitor's surface is open (Esc / search typing).
             // Only on Hyprland — see root.onHyprland: on KWin a focused layer surface
             // becomes the "active window" and Meta+Q would close the notch.
-            WlrLayershell.keyboardFocus: (notchWindow.ownsOpen && root.onHyprland) ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+            // Island.wantsKeyboard: narrow exception (Wi-Fi password typing) — the
+            // Meta+Q risk window is tiny while the user is actively typing a password.
+            WlrLayershell.keyboardFocus: (notchWindow.ownsOpen && (root.onHyprland || Island.wantsKeyboard)) ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
             color: "transparent"
             // Floating island — don't reserve a strip; windows pass under it like the
             // left/right islands (wallpaper breathes through the gaps).

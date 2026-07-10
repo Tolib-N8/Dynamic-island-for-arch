@@ -15,6 +15,10 @@ Singleton {
 
     property string openSurface: ""
     property string openScreen: ""
+    // Set while a surface needs real keyboard input (e.g. the Wi-Fi password
+    // prompt). On KWin the notch normally refuses keyboard focus (Meta+Q would
+    // close it as the "active window"); this narrowly re-enables it.
+    property bool wantsKeyboard: false
 
     function open(name, screen) {
         root.openSurface = name;
@@ -23,6 +27,7 @@ Singleton {
     function close() {
         root.openSurface = "";
         root.openScreen = "";
+        root.wantsKeyboard = false;
     }
     function toggle(name, screen) {
         const s = screen || "";
