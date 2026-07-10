@@ -173,17 +173,18 @@ Item {
                             Rectangle {
                                 height: parent.height
                                 radius: 3
-                                width: parent.width * Math.max(0, Math.min(1, (prov.modelData.remainingPct ?? 0) / 100))
-                                color: AiUsage.levelColor(prov.modelData.remainingPct)
+                                width: parent.width * (AiUsage.saturated(prov.modelData) ? 1
+                                       : Math.max(0, Math.min(1, (prov.modelData.remainingPct ?? 0) / 100)))
+                                color: AiUsage.chipColor(prov.modelData)
                                 Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
                             }
                         }
                         StyledText {
-                            text: (prov.modelData.remainingPct !== null && prov.modelData.remainingPct !== undefined
-                                   ? Math.round(prov.modelData.remainingPct) + "% left" : "—")
+                            text: (AiUsage.saturated(prov.modelData)
+                                   ? "at max" : AiUsage.remainingLabel(prov.modelData) + " left")
                                   + (prov.modelData.estimate ? "*" : "")
                             font.pixelSize: Appearance.font.pixelSize.smaller
-                            color: AiUsage.levelColor(prov.modelData.remainingPct)
+                            color: AiUsage.chipColor(prov.modelData)
                         }
                         StyledText {
                             text: "· resets " + AiUsage.resetIn(prov.modelData)

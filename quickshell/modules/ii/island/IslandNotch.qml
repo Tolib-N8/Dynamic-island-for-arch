@@ -448,16 +448,16 @@ Scope {
                                 Rectangle {
                                     height: parent.height
                                     radius: 2.5
-                                    width: parent.width * Math.max(0, Math.min(1, (chip.modelData.remainingPct ?? 0) / 100))
-                                    color: AiUsage.levelColor(chip.modelData.remainingPct)
+                                    width: parent.width * (AiUsage.saturated(chip.modelData) ? 1
+                                           : Math.max(0, Math.min(1, (chip.modelData.remainingPct ?? 0) / 100)))
+                                    color: AiUsage.chipColor(chip.modelData)
                                     Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
                                 }
                             }
                             StyledText {
-                                text: chip.modelData.remainingPct !== null && chip.modelData.remainingPct !== undefined
-                                      ? Math.round(chip.modelData.remainingPct) + "%" : "—"
+                                text: AiUsage.remainingLabel(chip.modelData)
                                 font.pixelSize: Appearance.font.pixelSize.smaller
-                                color: AiUsage.levelColor(chip.modelData.remainingPct)
+                                color: AiUsage.chipColor(chip.modelData)
                             }
                         }
                     }

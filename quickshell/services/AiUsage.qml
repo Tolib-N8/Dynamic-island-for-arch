@@ -32,6 +32,22 @@ Singleton {
         return remaining <= 15 ? "#E05561" : remaining <= 40 ? "#E8A23D" : "#7EE787";
     }
 
+    // Estimated ceilings (Claude) saturate when the current block outgrows the
+    // historical max — that's "you're in record territory", not a hard cutoff.
+    function saturated(p) {
+        return p && p.estimate && p.remainingPct !== null && p.remainingPct !== undefined && p.remainingPct <= 0;
+    }
+    function remainingLabel(p) {
+        if (!p || p.remainingPct === null || p.remainingPct === undefined)
+            return "—";
+        if (saturated(p))
+            return "at max";
+        return Math.round(p.remainingPct) + "%";
+    }
+    function chipColor(p) {
+        return saturated(p) ? "#E8A23D" : levelColor(p ? p.remainingPct : null);
+    }
+
     function resetIn(p) {
         if (!p || !p.resetsAt)
             return "";
