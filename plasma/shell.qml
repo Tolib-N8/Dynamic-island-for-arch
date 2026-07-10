@@ -68,6 +68,7 @@ ShellRoot {
         }
         function dashboard(): void { Island.toggle("dashboard", _screen()); }
         function agent(): void { Island.toggle("agent", _screen()); }
+        function power(): void { Island.toggle("power", _screen()); }
         function close(): void { Island.close(); }
     }
 

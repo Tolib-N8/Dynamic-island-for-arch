@@ -130,7 +130,10 @@ Scope {
             screen: modelData
 
             WlrLayershell.namespace: "quickshell:islandNotch"
-            WlrLayershell.layer: WlrLayer.Top
+            // Idle: Top — hides under fullscreen apps like a normal panel.
+            // Surface open: Overlay — the expanded dashboard must draw ABOVE the
+            // side-island pills (same-layer stacking on KWin ignores map order).
+            WlrLayershell.layer: notchWindow.ownsOpen ? WlrLayer.Overlay : WlrLayer.Top
             // Grab keyboard only while THIS monitor's surface is open (Esc / search typing).
             // Only on Hyprland — see root.onHyprland: on KWin a focused layer surface
             // becomes the "active window" and Meta+Q would close the notch.

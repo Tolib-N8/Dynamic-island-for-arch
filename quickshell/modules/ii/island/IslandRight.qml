@@ -101,6 +101,10 @@ Scope {
                     width: statsRow.implicitWidth + IslandStyle.hPadding * 2
 
                     HoverHandler { id: statsHover }
+                    // Click → dashboard (System tab has the full CPU/RAM/battery cards).
+                    TapHandler {
+                        onTapped: Island.toggle("dashboard", islandWindow.screen.name)
+                    }
 
                     RowLayout {
                         id: statsRow
@@ -302,6 +306,10 @@ Scope {
                         text: Qt.locale().toString(DateTime.clock.date, "h:mm AP")
                         font.pixelSize: Appearance.font.pixelSize.smaller
                         color: IslandStyle.textColor
+                    }
+                    // Click → dashboard (calendar + notifications).
+                    TapHandler {
+                        onTapped: Island.toggle("dashboard", islandWindow.screen.name)
                     }
                 }
 
