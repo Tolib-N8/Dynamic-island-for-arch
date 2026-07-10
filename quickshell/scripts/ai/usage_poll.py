@@ -104,12 +104,16 @@ def human_tokens(n):
 
 
 def claude_provider():
-    # cached ccusage call (npx is slow)
+    # cached ccusage call (npx is slow). Failures are NEVER cached: a single
+    # flaky npx run must not blank the Claude chip for the whole TTL — we fall
+    # back to the last good snapshot instead.
     now = time.time()
+    cached = None
     try:
         c = json.load(open(CACHE))
-        if now - c.get("ts", 0) < CCUSAGE_TTL:
-            return c.get("provider")
+        cached = c.get("provider")
+        if cached and now - c.get("ts", 0) < CCUSAGE_TTL:
+            return cached
     except Exception:
         pass
 
@@ -151,9 +155,26 @@ def claude_provider():
                 "detail": f"{human_tokens(total)}" + (f" / {human_tokens(limit)} tok" if limit else " tok"),
             }
             break
+        else:
+            # ccusage worked but no block is active (between blocks): the next
+            # 5h window hasn't started yet → full quota ahead.
+            if limit:
+                provider = {
+                    "id": "claude",
+                    "label": "Claude",
+                    "usedPct": 0.0,
+                    "remainingPct": 100.0,
+                    "resetsAt": None,
+                    "windowMinutes": 300,
+                    "plan": "5h block",
+                    "estimate": True,
+                    "detail": "no active block",
+                }
     except Exception:
         provider = None
 
+    if provider is None:
+        return cached  # stale beats blank
     try:
         json.dump({"ts": now, "provider": provider}, open(CACHE, "w"))
     except Exception:
