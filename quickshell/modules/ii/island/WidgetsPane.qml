@@ -630,9 +630,12 @@ Item {
                     ToggleChip {
                         icon: "nightlight"
                         label: "Night Mode"
-                        sublabel: Hyprsunset.temperatureActive ? "Enabled" : "Disabled"
-                        active: Hyprsunset.temperatureActive
-                        onToggled: Hyprsunset.toggleTemperature()
+                        // Plasma: hyprsunset can't touch KWin's gamma — drive
+                        // KWin Night Light instead.
+                        readonly property bool onHyprland: (Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE") ?? "").length > 0
+                        sublabel: (onHyprland ? Hyprsunset.temperatureActive : KwinNightLight.active) ? "Enabled" : "Disabled"
+                        active: onHyprland ? Hyprsunset.temperatureActive : KwinNightLight.active
+                        onToggled: onHyprland ? Hyprsunset.toggleTemperature() : KwinNightLight.toggle()
                     }
                     ToggleChip {
                         icon: "coffee"

@@ -2,6 +2,7 @@ pragma Singleton
 import qs.modules.common
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 
 /**
@@ -31,6 +32,17 @@ Singleton {
             root.inhibit = !root.inhibit;
         }
         Persistent.states.idle.inhibit = root.inhibit;
+    }
+
+    // KWin only honours the Wayland idle-inhibit protocol for visible surfaces,
+    // so the invisible 0x0 window below does nothing on Plasma. Hold a real
+    // inhibition through kde-inhibit instead; `cat` blocks on our stdin pipe and
+    // exits when quickshell drops it, so nothing leaks if we crash.
+    readonly property bool onHyprland: (Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE") ?? "").length > 0
+    Process {
+        command: ["kde-inhibit", "--power", "--screenSaver", "cat"]
+        stdinEnabled: true
+        running: !root.onHyprland && root.inhibit
     }
 
     IdleInhibitor {
