@@ -19,6 +19,19 @@ Item {
     // "" = normal widgets · "wifi"/"bt" = a detail page in the centre column
     property string detailPage: ""
 
+    // A soft rfkill block (Fn radio key, resume quirk) leaves BlueZ in
+    // "off-blocked", where setting Powered silently fails — lift the block
+    // before powering on.
+    function toggleBluetooth(): void {
+        const adapter = Bluetooth.defaultAdapter;
+        if (!adapter)
+            return;
+        if (adapter.enabled)
+            adapter.enabled = false;
+        else
+            Quickshell.execDetached(["sh", "-c", "rfkill unblock bluetooth && bluetoothctl power on"]);
+    }
+
     // Notification source: the built-in server (Hyprland) OR the KDE mirror
     // (Plasma, via bridge/notif_bridge.py). They're mutually exclusive per
     // platform, so show whichever is populated.
@@ -375,7 +388,7 @@ Item {
             powered: BluetoothStatus.enabled
             onBack: pane.detailPage = ""
             onRefresh: { if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.discovering = true; }
-            onTogglePower: { if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled; }
+            onTogglePower: pane.toggleBluetooth()
         }
 
         Flickable {
@@ -611,7 +624,7 @@ Item {
                         sublabel: BluetoothStatus.enabled ? (BluetoothStatus.connected ? "Connected" : "On") : "Off"
                         active: BluetoothStatus.enabled
                         expandable: true
-                        onToggled: { if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled; }
+                        onToggled: pane.toggleBluetooth()
                         onExpanded: pane.detailPage = "bt"
                     }
                     ToggleChip {
