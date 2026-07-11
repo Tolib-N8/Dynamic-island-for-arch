@@ -7,6 +7,16 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-11: Agent Island folded into the dashboard (Agents tab).** While an
+agent ran, every notch click landed on the agent surface — the rest of the
+dashboard was unreachable ("не могу получить доступ к остальным функциям").
+Now: dashboard has a 4th tab **Agents** hosting `AgentSurface`; a notch click
+always opens the dashboard, preselecting Agents when an agent is active
+(one-shot `Island.dashboardTab` hint consumed by `DashboardSurface` on create).
+The compact agent surface remains only for auto-opened permission cards.
+Verified: notch click with active agent → dashboard on Agents tab; tab clicks
+switch panes.
+
 **2026-07-11: Permission cards no longer hijack the screen.**
 - Auto-opened agent surfaces (pending permission) used to mask the WHOLE monitor
   for click-outside-to-close — with an agent running, the desktop was unclickable
