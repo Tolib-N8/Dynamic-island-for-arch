@@ -10,7 +10,14 @@ import QtQuick.Layouts
 FocusScope {
     id: surf
     property int currentTab: 0
-    readonly property var tabs: ["Widgets", "Kanban", "System"]
+    readonly property var tabs: ["Widgets", "Kanban", "System", "Agents"]
+
+    Component.onCompleted: {
+        if (Island.dashboardTab >= 0 && Island.dashboardTab < tabs.length) {
+            surf.currentTab = Island.dashboardTab;
+            Island.dashboardTab = -1;
+        }
+    }
 
     Keys.onPressed: (event) => {
         if (event.key === Qt.Key_Escape) {
@@ -79,6 +86,10 @@ FocusScope {
             SystemPane {
                 anchors.fill: parent
                 visible: surf.currentTab === 2
+            }
+            AgentSurface {
+                anchors.fill: parent
+                visible: surf.currentTab === 3
             }
         }
     }

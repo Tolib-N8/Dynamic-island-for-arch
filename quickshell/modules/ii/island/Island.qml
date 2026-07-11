@@ -24,6 +24,9 @@ Singleton {
     // stays interactive but everything outside remains click-through, so the user
     // can keep working while a permission card waits.
     property bool autoOpened: false
+    // One-shot hint: which dashboard tab to open on (-1 = default). Set before
+    // open("dashboard"), consumed by DashboardSurface on creation.
+    property int dashboardTab: -1
 
     function open(name, screen, auto) {
         root.openSurface = name;

@@ -388,9 +388,12 @@ Scope {
                             notchWindow.expandedSource = "";
                             return;
                         }
-                        // open on THIS monitor (moves the surface here if another had it)
-                        Island.open(notchWindow.displaySource === "agent" ? "agent" : "dashboard",
-                                    notchWindow.screen.name);
+                        // open on THIS monitor (moves the surface here if another had it).
+                        // Always the dashboard — an active agent just picks its tab, so
+                        // Widgets/Kanban/System stay one click away while agents run.
+                        if (notchWindow.displaySource === "agent")
+                            Island.dashboardTab = 3;
+                        Island.open("dashboard", notchWindow.screen.name);
                     }
                 }
 
