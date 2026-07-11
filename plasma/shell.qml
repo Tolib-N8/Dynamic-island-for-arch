@@ -73,6 +73,16 @@ ShellRoot {
         function agent(): void { Island.toggle("agent", _screen()); }
         function power(): void { Island.toggle("power", _screen()); }
         function close(): void { Island.close(); }
+        // Clipboard history (bind to Meta+V). Second press closes.
+        function clipboard(): void {
+            if (Island.openSurface === "dashboard") {
+                Island.close();
+            } else {
+                Island.dashboardTab = 0;
+                Island.dashboardDetail = "clip";
+                Island.open("dashboard", _screen());
+            }
+        }
     }
 
     // The "Code" voice assistant drives the notch as its overlay (replacing its

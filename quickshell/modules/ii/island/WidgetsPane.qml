@@ -22,7 +22,26 @@ Item {
     // Backlight of the monitor this pane is shown on (resolved once the
     // surface's window exists; null on monitors without backlight control).
     property var brightnessMonitor: null
-    Component.onCompleted: brightnessMonitor = Brightness.getMonitorForScreen(pane.QsWindow.window?.screen) ?? null
+    Component.onCompleted: {
+        brightnessMonitor = Brightness.getMonitorForScreen(pane.QsWindow.window?.screen) ?? null;
+        pane.consumeDetailHint();
+    }
+
+    // Jump straight to a detail page when commanded (island clipboard IPC /
+    // Meta+V) — both when the dashboard is freshly created and when the hint
+    // arrives while it's already open.
+    function consumeDetailHint() {
+        if (Island.dashboardDetail !== "") {
+            pane.detailPage = Island.dashboardDetail;
+            Island.dashboardDetail = "";
+        }
+    }
+    Connections {
+        target: Island
+        function onDashboardDetailChanged() {
+            pane.consumeDetailHint();
+        }
+    }
 
     // A soft rfkill block (Fn radio key, resume quirk) leaves BlueZ in
     // "off-blocked", where setting Powered silently fails — lift the block
