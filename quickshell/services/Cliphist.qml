@@ -110,6 +110,22 @@ Singleton {
         wipeProc.running = true;
     }
 
+    // Plasma edition: nothing else feeds cliphist (on Hyprland the compositor
+    // config runs the store watchers), so keep them alive ourselves. Each
+    // watcher is tethered to our stdin pipe — when quickshell dies (even
+    // SIGKILL) the pipe closes and the wrapper reaps wl-paste, so restarts
+    // don't accumulate orphaned watchers.
+    readonly property bool onHyprland: (Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE") ?? "").length > 0
+    component StoreWatcher: Process {
+        required property string mimeType
+        running: !root.onHyprland
+        stdinEnabled: true
+        command: ["bash", "-c",
+            `wl-paste --type ${mimeType} --watch ${root.cliphistBinary} store & W=$!; cat >/dev/null; kill $W 2>/dev/null`]
+    }
+    StoreWatcher { mimeType: "text" }
+    StoreWatcher { mimeType: "image" }
+
     Connections {
         target: Quickshell
         function onClipboardTextChanged() {

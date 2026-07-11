@@ -33,6 +33,9 @@ ShellRoot {
     Component.onCompleted: {
         MaterialThemeLoader.reapplyTheme()   // pick up generated Material colors
         AgentService.load()                  // start the Claude Code agent bridge listener
+        Cliphist.refresh()                   // wake the lazy singleton so its
+                                             // wl-paste store watchers run from
+                                             // startup, not first dashboard open
     }
 
     // The notch IS the notification server here (Notifications service owns

@@ -235,6 +235,119 @@ Item {
         MiniSwitch { checked: ph.powered; onClicked: ph.togglePower() }
     }
 
+    // Clipboard history page: click a row to copy it back; close = delete one,
+    // delete_sweep in the header wipes everything.
+    component ClipPage: ColumnLayout {
+        id: clipPage
+        spacing: 6
+        property string copiedEntry: ""
+        onVisibleChanged: {
+            if (visible)
+                Cliphist.refresh();
+            clipPage.copiedEntry = "";
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+            Rectangle {
+                implicitWidth: 26; implicitHeight: 26; radius: 13
+                color: clipBackHover.hovered ? Qt.rgba(1, 1, 1, 0.10) : "transparent"
+                HoverHandler { id: clipBackHover }
+                MaterialSymbol { anchors.centerIn: parent; text: "arrow_back"; iconSize: 18; color: IslandStyle.textColor }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: pane.detailPage = "" }
+            }
+            StyledText {
+                text: "Clipboard"
+                font.pixelSize: Appearance.font.pixelSize.small
+                font.weight: Font.DemiBold
+                color: IslandStyle.textColor
+            }
+            Item { Layout.fillWidth: true }
+            MaterialSymbol {
+                text: "delete_sweep"
+                iconSize: 18
+                color: clipWipeHover.hovered ? IslandStyle.accent : IslandStyle.subtextColor
+                HoverHandler { id: clipWipeHover }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Cliphist.wipe() }
+            }
+        }
+
+        Flickable {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            contentHeight: clipCol.implicitHeight
+            ColumnLayout {
+                id: clipCol
+                width: parent.width
+                spacing: 4
+
+                StyledText {
+                    visible: Cliphist.entries.length === 0
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.topMargin: 14
+                    text: "Clipboard history is empty"
+                    font.pixelSize: Appearance.font.pixelSize.smaller
+                    color: IslandStyle.subtextColor
+                }
+
+                Repeater {
+                    model: Cliphist.entries.slice(0, 40)
+                    delegate: Rectangle {
+                        id: clipRow
+                        required property string modelData
+                        readonly property bool isImage: Cliphist.entryIsImage(modelData)
+                        // strip the leading "<id>\t" cliphist prefix for display
+                        readonly property string body: modelData.replace(/^\d+\t/, "")
+                        Layout.fillWidth: true
+                        implicitHeight: 34
+                        radius: 8
+                        color: clipMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.09) : Qt.rgba(1, 1, 1, 0.05)
+                        Behavior on color { ColorAnimation { duration: 100 } }
+                        MouseArea {
+                            id: clipMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                Cliphist.copy(clipRow.modelData);
+                                clipPage.copiedEntry = clipRow.modelData;
+                            }
+                        }
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                            spacing: 8
+                            MaterialSymbol {
+                                text: clipPage.copiedEntry === clipRow.modelData ? "check"
+                                    : clipRow.isImage ? "image" : "content_paste"
+                                iconSize: 15
+                                color: clipPage.copiedEntry === clipRow.modelData ? IslandStyle.accent : IslandStyle.subtextColor
+                            }
+                            StyledText {
+                                Layout.fillWidth: true
+                                text: clipRow.isImage ? clipRow.body.replace(/\[\[|\]\]/g, "").trim() : clipRow.body
+                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                color: IslandStyle.textColor
+                                elide: Text.ElideRight
+                                maximumLineCount: 1
+                            }
+                            MaterialSymbol {
+                                text: "close"
+                                iconSize: 14
+                                color: clipDelHover.hovered ? IslandStyle.accent : IslandStyle.subtextColor
+                                HoverHandler { id: clipDelHover }
+                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Cliphist.deleteEntry(clipRow.modelData) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Wi-Fi detail page: scan, pick a network, inline password prompt.
     component WifiPage: ColumnLayout {
         spacing: 6
@@ -686,6 +799,14 @@ Item {
                         active: Idle.inhibit
                         onToggled: Idle.toggleInhibit()
                     }
+                    ToggleChip {
+                        icon: "content_paste"
+                        label: "Clipboard"
+                        sublabel: Cliphist.entries.length > 0 ? `${Cliphist.entries.length} items` : "Empty"
+                        expandable: true
+                        onToggled: pane.detailPage = "clip"
+                        onExpanded: pane.detailPage = "clip"
+                    }
                 }
 
                 RowLayout {
@@ -834,6 +955,10 @@ Item {
             BtPage {
                 anchors.fill: parent
                 visible: pane.detailPage === "bt"
+            }
+            ClipPage {
+                anchors.fill: parent
+                visible: pane.detailPage === "clip"
             }
         }
 
