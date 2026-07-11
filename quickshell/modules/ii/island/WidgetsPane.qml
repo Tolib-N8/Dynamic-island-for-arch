@@ -214,10 +214,17 @@ Item {
         }
         Item { Layout.fillWidth: true }
         MaterialSymbol {
+            id: phRefreshIcon
             text: "refresh"
             iconSize: 17
             color: ph.busy ? IslandStyle.accent : IslandStyle.subtextColor
-            RotationAnimation on rotation { running: ph.busy; loops: Animation.Infinite; from: 0; to: 360; duration: 900 }
+            RotationAnimation on rotation {
+                running: ph.busy
+                loops: Animation.Infinite
+                from: 0; to: 360; duration: 900
+                // settle flat instead of freezing mid-turn when the scan ends
+                onRunningChanged: if (!running) phRefreshIcon.rotation = 0
+            }
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: ph.refresh() }
         }
         MiniSwitch { checked: ph.powered; onClicked: ph.togglePower() }
@@ -375,11 +382,41 @@ Item {
 
     // Bluetooth detail page: discover, connect/disconnect, pair/forget.
     component BtPage: ColumnLayout {
+        id: btPage
         spacing: 6
-        // Discover nearby devices only while the page is open.
+        // Discover in a bounded burst (endless discovery = endlessly spinning
+        // refresh icon that reads as a hang). Refresh restarts the burst.
+        function startDiscovery() {
+            if (Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled) {
+                Bluetooth.defaultAdapter.discovering = true;
+                discoveryStop.restart();
+            }
+        }
         onVisibleChanged: {
-            if (Bluetooth.defaultAdapter)
-                Bluetooth.defaultAdapter.discovering = visible && Bluetooth.defaultAdapter.enabled;
+            if (visible) {
+                btPage.startDiscovery();
+            } else {
+                discoveryStop.stop();
+                if (Bluetooth.defaultAdapter)
+                    Bluetooth.defaultAdapter.discovering = false;
+            }
+        }
+        // Powering the adapter on from this page should kick off a scan too —
+        // otherwise the list sits empty until a manual refresh.
+        Connections {
+            target: Bluetooth.defaultAdapter
+            function onEnabledChanged() {
+                if (btPage.visible && Bluetooth.defaultAdapter.enabled)
+                    btPage.startDiscovery();
+            }
+        }
+        Timer {
+            id: discoveryStop
+            interval: 12000
+            onTriggered: {
+                if (Bluetooth.defaultAdapter)
+                    Bluetooth.defaultAdapter.discovering = false;
+            }
         }
 
         PageHeader {
@@ -387,7 +424,7 @@ Item {
             busy: Bluetooth.defaultAdapter?.discovering ?? false
             powered: BluetoothStatus.enabled
             onBack: pane.detailPage = ""
-            onRefresh: { if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.discovering = true; }
+            onRefresh: btPage.startDiscovery()
             onTogglePower: pane.toggleBluetooth()
         }
 
