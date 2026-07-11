@@ -54,7 +54,10 @@ Singleton {
     // Refetch on every layoutChanged / layoutListChanged signal.
     Process {
         running: !root.onHyprland
-        command: ["dbus-monitor", "--session", "type='signal',interface='org.kde.KeyboardLayouts'"]
+        stdinEnabled: true
+        // Tethered to our stdin pipe so restarts don't leave orphaned monitors.
+        command: ["bash", "-c",
+            "dbus-monitor --session \"type='signal',interface='org.kde.KeyboardLayouts'\" & W=$!; cat >/dev/null; kill $W 2>/dev/null"]
         stdout: SplitParser {
             onRead: line => {
                 if (line.includes("layoutChanged") || line.includes("layoutListChanged"))

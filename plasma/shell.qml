@@ -36,6 +36,8 @@ ShellRoot {
         Cliphist.refresh()                   // wake the lazy singleton so its
                                              // wl-paste store watchers run from
                                              // startup, not first dashboard open
+        SleepRestore.btWasOn = false         // wake the lazy singleton so its
+                                             // resume watcher runs from startup
     }
 
     // The notch IS the notification server here (Notifications service owns
