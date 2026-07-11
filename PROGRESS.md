@@ -7,6 +7,25 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-11 (evening): KDE-panel parity — layout pill, brightness, clipboard.**
+The last three gaps for dropping the stock KDE panel:
+- **Keyboard layout pill** (`services/KdeKeyboardLayout.qml` + pill in
+  IslandRight between perf toggle and clock): KWin's org.kde.KeyboardLayouts
+  DBus API; live updates via a `dbus-monitor` subscription to layoutChanged;
+  click = switchToNextLayout. Verified live us↔ru on screen. Hidden on
+  Hyprland / single-layout.
+- **Brightness slider** in Widgets tab next to volume/mic — existing Brightness
+  service (brightnessctl), monitor resolved via `pane.QsWindow.window?.screen`
+  in Component.onCompleted. Hidden when no backlight.
+- **Clipboard history page** — 5th chip opens a centre-column page over the
+  existing Cliphist service: click row = copy back (check feedback), per-row
+  delete, wipe-all. Cliphist now runs its own `wl-paste --watch cliphist store`
+  watchers on Plasma, each tethered to quickshell's stdin pipe (bash wrapper:
+  `wl-paste ... & cat >/dev/null; kill $W`) — SIGKILL of qs leaves no orphaned
+  watchers (verified; before the tether every restart leaked two). shell.qml
+  pokes `Cliphist.refresh()` at startup because lazy singletons don't
+  instantiate (and thus don't watch) until first referenced.
+
 **2026-07-11: Night Mode + Caffeine fixed for Plasma.**
 - Night Mode chip drove hyprsunset/hyprctl — no-op under KWin (only flipped its
   own flag). New `services/KwinNightLight.qml`: ON = `kwriteconfig6 --notify`
