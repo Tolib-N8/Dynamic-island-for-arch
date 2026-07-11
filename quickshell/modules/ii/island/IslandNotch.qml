@@ -313,10 +313,13 @@ Scope {
                     return 0;
                 }
             }
-            property real targetWidth: islandState === "open" ? (root.surfaceSizes[Island.openSurface]?.w ?? root.maxWidth)
+            // Dashboard's Agents tab holds far less content than the widget tabs —
+            // shrink the body to it (the size Behaviors animate the morph).
+            readonly property bool dashboardCompact: Island.openSurface === "dashboard" && Island.dashboardCurrentTab === 3
+            property real targetWidth: islandState === "open" ? (dashboardCompact ? 640 : (root.surfaceSizes[Island.openSurface]?.w ?? root.maxWidth))
                 : islandState === "expanded" ? (displaySource === "agent" ? (root.mediaActive ? 264 : 224) : Math.min(root.expandedMaxWidth, contentWidth + 36))
                 : 180
-            property real targetHeight: islandState === "open" ? (root.surfaceSizes[Island.openSurface]?.h ?? root.maxHeight)
+            property real targetHeight: islandState === "open" ? (dashboardCompact ? 300 : (root.surfaceSizes[Island.openSurface]?.h ?? root.maxHeight))
                 : islandState === "expanded" ? (
                     displaySource === "assistant" ? Math.max(44, assistantUI.implicitHeight + 26) // 13 top + 13 bottom
                     : (displaySource === "media" || displaySource === "agent" ? 40 : 54))

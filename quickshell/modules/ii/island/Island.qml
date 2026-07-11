@@ -27,6 +27,9 @@ Singleton {
     // One-shot hint: which dashboard tab to open on (-1 = default). Set before
     // open("dashboard"), consumed by DashboardSurface on creation.
     property int dashboardTab: -1
+    // Live mirror of the dashboard's active tab, so the notch can size the open
+    // surface per tab (the Agents tab is compact; the widget tabs are wide).
+    property int dashboardCurrentTab: 0
 
     function open(name, screen, auto) {
         root.openSurface = name;

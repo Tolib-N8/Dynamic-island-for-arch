@@ -12,11 +12,14 @@ FocusScope {
     property int currentTab: 0
     readonly property var tabs: ["Widgets", "Kanban", "System", "Agents"]
 
+    onCurrentTabChanged: Island.dashboardCurrentTab = surf.currentTab
+
     Component.onCompleted: {
         if (Island.dashboardTab >= 0 && Island.dashboardTab < tabs.length) {
             surf.currentTab = Island.dashboardTab;
             Island.dashboardTab = -1;
         }
+        Island.dashboardCurrentTab = surf.currentTab;
     }
 
     Keys.onPressed: (event) => {
