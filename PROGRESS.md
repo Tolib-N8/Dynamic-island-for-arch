@@ -7,6 +7,28 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-11: Right-island tray rebuilt for Plasma — verified with real clicks.**
+- end-4's bar `SysTray` was unusable inside the narrow island window on KWin:
+  every item was "unpinned", so the pill showed only the overflow chevron, whose
+  `StyledPopup` positions itself in *bar-window* coordinates (assumes a
+  full-width bar window — wrong in the pill-sized island window), and menu
+  dismissal relies on `HyprlandFocusGrab` (KWin: "hyprland_focus_grab_v1 not
+  supported"). Net effect: tray looked present but nothing worked.
+- Replaced with an island-native tray inline in `IslandRight.qml`: all
+  `SystemTray.items` rendered directly in the pill (no pin/overflow), left-click
+  `activate()` (or menu for `onlyMenu` items), middle-click
+  `secondaryActivate()`, right-click opens the SNI menu via **`QsMenuAnchor`** —
+  a native popup the compositor positions and dismisses itself (same pattern as
+  waffle's `TrayButton`). Works on both KWin and Hyprland.
+- Verified via ydotool-injected clicks + screenshots: left-click toggled the
+  Telegram window, right-click showed "Открыть/Закрыть Telegram" under the icon,
+  outside click dismissed the menu.
+- Gotcha: ydotool `mousemove -a` is useless under adaptive pointer accel; fix =
+  set flat profile on ydotool's virtual device at runtime
+  (`busctl --user set-property org.kde.KWin /org/kde/KWin/InputDevice/eventNN
+  org.kde.KWin.InputDevice pointerAccelerationProfileFlat b true`), then home to
+  a screen corner with a huge relative move and step to the target relatively.
+
 **2026-07-10: AI quota tracker + lockscreen polish — user-verified.**
 - **CodexBar-style AI limits in the notch** (`scripts/ai/usage_poll.py` +
   `services/AiUsage.qml`): Codex = EXACT subscription percentages parsed from

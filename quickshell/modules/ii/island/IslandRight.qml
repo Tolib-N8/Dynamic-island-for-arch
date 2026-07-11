@@ -8,6 +8,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Widgets
 import Quickshell.Services.UPower
 import Quickshell.Services.SystemTray
 
@@ -203,16 +204,70 @@ Scope {
                 }
 
                 // ---- Pill 2: system tray (only when there are tray items) ----
+                // Island-native tray. The bar's SysTray is unusable here: its overflow
+                // popup is positioned in bar-window coordinates (wrong in this narrow
+                // window) and its menus are dismissed via HyprlandFocusGrab, which KWin
+                // doesn't implement. QsMenuAnchor opens the item menu as a native popup
+                // that the compositor places and dismisses itself.
                 Pill {
                     id: trayPill
                     visible: SystemTray.items.values.length > 0
                     height: parent.height
-                    width: traySysTray.implicitWidth + IslandStyle.hPadding * 2
+                    width: trayRow.implicitWidth + IslandStyle.hPadding * 2
 
-                    SysTray {
-                        id: traySysTray
-                        showSeparator: false
+                    Row {
+                        id: trayRow
                         anchors.centerIn: parent
+                        spacing: 10
+
+                        Repeater {
+                            model: SystemTray.items
+
+                            delegate: MouseArea {
+                                id: trayItem
+                                required property SystemTrayItem modelData
+                                width: 20
+                                height: 20
+                                hoverEnabled: true
+                                acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+                                opacity: containsMouse ? 1 : 0.85
+                                Behavior on opacity { NumberAnimation { duration: 120 } }
+
+                                onPressed: (event) => {
+                                    switch (event.button) {
+                                    case Qt.LeftButton:
+                                        if (trayItem.modelData.onlyMenu && trayItem.modelData.hasMenu)
+                                            itemMenu.open();
+                                        else
+                                            trayItem.modelData.activate();
+                                        break;
+                                    case Qt.RightButton:
+                                        if (trayItem.modelData.hasMenu)
+                                            itemMenu.open();
+                                        break;
+                                    case Qt.MiddleButton:
+                                        trayItem.modelData.secondaryActivate();
+                                        break;
+                                    }
+                                }
+
+                                IconImage {
+                                    anchors.fill: parent
+                                    source: trayItem.modelData.icon
+                                }
+
+                                QsMenuAnchor {
+                                    id: itemMenu
+                                    menu: trayItem.modelData.menu
+                                    anchor {
+                                        item: trayItem
+                                        adjustment: PopupAdjustment.ResizeY | PopupAdjustment.SlideX
+                                        gravity: Edges.Bottom
+                                        edges: Edges.Bottom
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
