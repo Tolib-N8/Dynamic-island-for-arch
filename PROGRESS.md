@@ -7,6 +7,16 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-12: Bluetooth auto-revive after resume (`SleepRestore.qml`).** BT kept
+coming back soft-blocked/unpowered after every suspend (adapter re-registers:
+fresh rfkill index each wake; no "block" actor visible in journal). Service
+watches logind PrepareForSleep on the system bus (dbus-monitor), snapshots
+adapter state before sleep, and on wake — only if BT was on — runs
+`rfkill unblock bluetooth; bluetoothctl power on` after 3s. Woken eagerly from
+plasma/shell.qml (lazy singleton). Real-world verification = next suspend.
+Also: both dbus-monitor watchers now stdin-tethered (restarts orphaned them;
+orphans self-clean only on next signal write → SIGPIPE).
+
 **2026-07-11 (late): Meta+V → island clipboard page — USER-VERIFIED.** Meta+V
 was bound to Klipper's popup, which died when the clipboard applet left the
 systray (`/klipper` DBus object gone from plasmashell). New `island clipboard`
