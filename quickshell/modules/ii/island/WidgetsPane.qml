@@ -19,6 +19,11 @@ Item {
     // "" = normal widgets · "wifi"/"bt" = a detail page in the centre column
     property string detailPage: ""
 
+    // Backlight of the monitor this pane is shown on (resolved once the
+    // surface's window exists; null on monitors without backlight control).
+    property var brightnessMonitor: null
+    Component.onCompleted: brightnessMonitor = Brightness.getMonitorForScreen(pane.QsWindow.window?.screen) ?? null
+
     // A soft rfkill block (Fn radio key, resume quirk) leaves BlueZ in
     // "off-blocked", where setting Powered silently fails — lift the block
     // before powering on.
@@ -695,6 +700,12 @@ Item {
                         icon: (Audio.source?.audio?.muted ?? false) ? "mic_off" : "mic"
                         value: Audio.source?.audio?.volume ?? 0
                         onMoved: v => { if (Audio.source?.audio) Audio.source.audio.volume = v; }
+                    }
+                    HSlider {
+                        visible: pane.brightnessMonitor !== null
+                        icon: "brightness_6"
+                        value: pane.brightnessMonitor?.brightness ?? 0
+                        onMoved: v => pane.brightnessMonitor?.setBrightness(v)
                     }
                 }
 
