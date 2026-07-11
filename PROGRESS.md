@@ -7,20 +7,26 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
-**2026-07-11 (late): Meta+V → island clipboard page.** Meta+V was bound to
-Klipper's popup, which died when the clipboard applet left the systray
-(`/klipper` DBus object gone from plasmashell). New `island clipboard` IPC verb
-opens the dashboard straight onto the Clipboard page (one-shot
-`Island.dashboardDetail` hint; second press closes). System side (not in repo):
-`~/.local/share/applications/oai-clipboard.desktop` + KGlobalAccel service
-shortcut. Gotchas: (1) writing `[services][x.desktop] _launch=` into
-kglobalshortcutsrc is NOT picked up live — register via DBus
-`org.kde.KGlobalAccel doRegister + setShortcut` (Meta+V = int 268435542);
-(2) run `kbuildsycoca6` so KService can find the new .desktop; (3) on Plasma 6.7
-Wayland org.kde.kglobalaccel is served by kwin_wayland (no separate daemon);
-(4) ydotool-synthesised Meta+V does NOT trigger KWin shortcuts — verify via
-`/component/oai_clipboard_desktop invokeShortcut "_launch"` (works) + a real
-key press.
+**2026-07-11 (late): Meta+V → island clipboard page — USER-VERIFIED.** Meta+V
+was bound to Klipper's popup, which died when the clipboard applet left the
+systray (`/klipper` DBus object gone from plasmashell). New `island clipboard`
+IPC verb opens the dashboard straight onto the Clipboard page (one-shot
+`Island.dashboardDetail` hint; second press closes).
+
+Binding: **KWin script** (`plasma/kwin-script/oai-shortcuts/`, installed by
+`plasma/install-shortcuts.sh`) — `registerShortcut("…", "…", "Meta+V", …)`
+runs inside the compositor (same grab path as built-in shortcuts) and
+`StartUnit`s the oneshot user unit `oai-clipboard.service` (KWin scripts can't
+spawn processes; StartUnit(ss) is the only simple-signature DBus launcher).
+Autoloads every login via kwinrc [Plugins] oai-shortcutsEnabled.
+
+DEAD END (do not retry): KGlobalAccel *service* shortcuts
+(`[services][x.desktop] _launch=` + doRegister/setShortcut over DBus). The
+component registers, persists, and even launches via `invokeShortcut`, but its
+key grab stays `isActive: false` until kglobalacceld (inside kwin_wayland)
+reloads at login — a live registration-holder client doesn't activate it
+either. Also: ydotool-synthesised Meta+V never triggers KWin shortcuts — test
+via `/component/kwin invokeShortcut "<name>"` + a real key press.
 
 **2026-07-11 (evening): KDE-panel parity — layout pill, brightness, clipboard.**
 The last three gaps for dropping the stock KDE panel:
