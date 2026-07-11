@@ -115,7 +115,7 @@ Scope {
         target: AgentService
         function onPendingPermissionsChanged() {
             if (AgentService.pendingPermissions.length > 0 && Island.openSurface === "" && !VoiceAssistant.active)
-                Island.open("agent", root.focusedScreenName());
+                Island.open("agent", root.focusedScreenName(), true);
             else if (AgentService.pendingPermissions.length === 0 && Island.openSurface === "agent")
                 Island.close();
         }
@@ -165,8 +165,11 @@ Scope {
             // notch on the others.
             readonly property bool ownsOpen: Island.openSurface !== "" && Island.openScreen === (notchWindow.screen.name ?? "")
 
+            // Auto-opened surfaces (permission cards) mask only the notch body so
+            // the rest of the screen stays usable; user-opened surfaces mask the
+            // whole screen for click-outside-to-close.
             mask: Region {
-                item: notchWindow.ownsOpen ? fullMaskItem : notch
+                item: (notchWindow.ownsOpen && !Island.autoOpened) ? fullMaskItem : notch
             }
             Item { id: fullMaskItem; anchors.fill: parent }
 
@@ -324,7 +327,7 @@ Scope {
             // notch close the surface. Same window → z-order is guaranteed.
             MouseArea {
                 anchors.fill: parent
-                enabled: notchWindow.islandState === "open"
+                enabled: notchWindow.islandState === "open" && !Island.autoOpened
                 visible: enabled
                 acceptedButtons: Qt.AllButtons
                 onPressed: Island.close()
