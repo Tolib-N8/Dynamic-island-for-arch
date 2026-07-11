@@ -350,6 +350,28 @@ Scope {
                 }
 
                 // ---- Pill 5: clock (12-hour, small) ----
+                // ---- keyboard layout (Plasma only; click = next layout) ----
+                Pill {
+                    id: layoutPill
+                    visible: !root.onHyprland && KdeKeyboardLayout.layoutCount > 1
+                    height: parent.height
+                    width: layoutText.implicitWidth + IslandStyle.hPadding * 2
+
+                    StyledText {
+                        id: layoutText
+                        anchors.centerIn: parent
+                        text: KdeKeyboardLayout.current
+                        font.pixelSize: Appearance.font.pixelSize.smaller
+                        font.weight: Font.DemiBold
+                        color: layoutHover.hovered ? IslandStyle.accent : IslandStyle.textColor
+                        Behavior on color { ColorAnimation { duration: 150; easing.type: Easing.OutQuad } }
+                    }
+                    HoverHandler { id: layoutHover }
+                    TapHandler {
+                        onTapped: KdeKeyboardLayout.next()
+                    }
+                }
+
                 Pill {
                     id: clockPill
                     height: parent.height
