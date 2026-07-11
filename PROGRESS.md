@@ -7,6 +7,22 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-11: Permission cards no longer hijack the screen.**
+- Auto-opened agent surfaces (pending permission) used to mask the WHOLE monitor
+  for click-outside-to-close — with an agent running, the desktop was unclickable
+  ("не могу пользоваться остальными функциями"). New `Island.autoOpened` flag:
+  auto-opened surfaces mask only the notch body (rest of screen click-through,
+  no click-catcher); user-opened surfaces keep full-screen click-to-close.
+- Verified with a fake `permission_request` into the bridge socket: card
+  auto-opened, outside click did NOT close it, desktop stayed usable (user kept
+  watching a video under it), Allow All on the card worked.
+
+**2026-07-11: BT toggle lifts rfkill soft block.** After suspend the adapter was
+`off-blocked` (soft rfkill); setting BlueZ Powered silently fails in that state,
+so the island's BT toggle looked dead. `pane.toggleBluetooth()` now runs
+`rfkill unblock bluetooth && bluetoothctl power on` when enabling. Verified
+end-to-end: blocked → dashboard chip click → On.
+
 **2026-07-11: Right-island tray rebuilt for Plasma — verified with real clicks.**
 - end-4's bar `SysTray` was unusable inside the narrow island window on KWin:
   every item was "unpinned", so the pill showed only the overflow chevron, whose
