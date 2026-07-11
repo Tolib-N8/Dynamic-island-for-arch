@@ -7,6 +7,23 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-11: Night Mode + Caffeine fixed for Plasma.**
+- Night Mode chip drove hyprsunset/hyprctl — no-op under KWin (only flipped its
+  own flag). New `services/KwinNightLight.qml`: ON = `kwriteconfig6 --notify`
+  NightColor Active+Mode=Constant, OFF = Active=false. **Gotcha: without
+  `--notify` KWin never applies the change** (its KConfigWatcher listens for
+  kconfig change broadcasts; even `org.kde.KWin reconfigure` doesn't reload
+  NightColor). Chip state = DBus `currentTemperature < 6000` (real warm state,
+  30s poll), so an externally-scheduled night light reads correctly. Verified:
+  Mode=Constant with --notify → currentTemperature 6500→4500 on screen.
+- Caffeine used Quickshell IdleInhibitor on an invisible 0×0 window — KWin
+  honours idle-inhibit only for visible surfaces, so it did nothing. `Idle`
+  service now also runs `kde-inhibit --power --screenSaver cat` (stdinEnabled;
+  dies with quickshell) while `inhibit` is on, off Hyprland. Verified
+  kde-inhibit registers: org.freedesktop.PowerManagement HasInhibit → true.
+- Note: PolicyAgent.ListInhibitions does NOT show kde-inhibit entries; use
+  PowerManagement.HasInhibit to check.
+
 **2026-07-11: Agent Island folded into the dashboard (Agents tab).** While an
 agent ran, every notch click landed on the agent surface — the rest of the
 dashboard was unreachable ("не могу получить доступ к остальным функциям").
