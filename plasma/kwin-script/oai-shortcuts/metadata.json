@@ -1,0 +1,13 @@
+{
+    "KPlugin": {
+        "Id": "oai-shortcuts",
+        "Name": "OpenAgentIsland Shortcuts",
+        "Description": "Global shortcuts for the OpenAgentIsland notch (Meta+V clipboard)",
+        "Authors": [{ "Name": "OpenAgentIsland" }],
+        "Version": "1.0",
+        "License": "MIT"
+    },
+    "KPackageStructure": "KWin/Script",
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}

@@ -1,0 +1,6 @@
+[Unit]
+Description=Open the OpenAgentIsland clipboard page
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/qs -c openagentisland-plasma ipc call island clipboard
