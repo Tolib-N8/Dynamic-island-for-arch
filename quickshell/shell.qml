@@ -31,6 +31,7 @@ ShellRoot {
         Wallpapers.load()
         Updates.load()
         AgentService.load()   // start the Claude Code agent bridge listener
+        WindowTiling.autoTile = true  // wake the lazy singleton so its `tiling` IPC works pre-dashboard
     }
 
 

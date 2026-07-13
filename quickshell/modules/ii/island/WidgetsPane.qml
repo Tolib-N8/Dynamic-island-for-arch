@@ -818,6 +818,15 @@ Item {
                         active: Idle.inhibit
                         onToggled: Idle.toggleInhibit()
                     }
+                    ToggleChip {
+                        // Hyprland-only: floats new windows via hl.dsp dispatchers.
+                        visible: (Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE") ?? "").length > 0
+                        icon: "view_quilt"
+                        label: "Auto Tile"
+                        sublabel: WindowTiling.autoTile ? "Windows auto-size" : "Windows float"
+                        active: WindowTiling.autoTile
+                        onToggled: WindowTiling.autoTile = !WindowTiling.autoTile
+                    }
                 }
                 // Clipboard history and the wallpaper picker have no chips — six
                 // didn't fit the row. They stay reachable via `island clipboard`
