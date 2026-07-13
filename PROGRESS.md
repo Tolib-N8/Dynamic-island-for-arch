@@ -7,6 +7,22 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-13 (evening): macOS dock — USER-APPROVED.** Magnification (cosine
+falloff, +60%, 96px range; centre from BASE width to avoid a binding loop
+через implicitWidth), launch bounce, glass tiles behind icons (kitty/zen/
+YandexMusic icons are dark and vanished on a dark bar — diagnosed by rendering
+the icon files on black), liquid-glass bar (light frosted gradient + gloss +
+hairline; dark gradient stops read as black over the dark wallpaper corner),
+pin/app-grid buttons removed, round accent dots. Hyprland side (user config,
+NOT in repo): `~/.config/hypr/custom/rules.lua` adds blur + ignore_alpha 0.15
+for namespace quickshell:dock. Gotchas: (1) layer rules apply at surface MAP
+time — after hyprctl reload the quickshell surface must be recreated (any
+hot-reload does it); (2) a full-strength StyledRectangularShadow behind
+translucent glass reads as a dark smudge — opacity 0.35; (3) user's Hyprland
+config is LUA (dots-hyprland): `hl.layer_rule({ match = { namespace = "..." },
+blur = true })`, and `hyprctl dispatch` uses hl.dsp.* dispatchers (no
+movecursor equivalent found — use ydotool for pointer).
+
 **2026-07-13: Wallpaper picker in the notch (user back on Hyprland).** New
 "wallpapers" surface (1200×620) embedding end-4's `WallpaperSelectorContent`
 (thumbnails/search/folder nav; apply → switchwall.sh re-themes the island).
