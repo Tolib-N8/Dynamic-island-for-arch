@@ -1,6 +1,7 @@
 import qs.services
 import qs.modules.common
 import qs.modules.common.functions
+import qs.modules.ii.island
 import Qt5Compat.GraphicalEffects
 import QtQuick
 import QtQuick.Layouts
@@ -12,15 +13,47 @@ DockButton {
     property var appToplevel
     property var appListRoot
     property int lastFocused: -1
-    property real iconSize: 35
-    property real countDotWidth: 10
-    property real countDotHeight: 4
+    property real iconBaseSize: 35
+    property real iconSize: iconBaseSize * magFactor
+    property real countDotWidth: 5
+    property real countDotHeight: 5
     property bool appIsActive: appToplevel.toplevels.find(t => (t.activated == true)) !== undefined
 
     readonly property bool isSeparator: appToplevel.appId === "SEPARATOR"
     property var desktopEntry: DesktopEntries.heuristicLookup(appToplevel.appId)
     enabled: !isSeparator
-    implicitWidth: isSeparator ? 1 : implicitHeight - topInset - bottomInset
+
+    // --- macOS-style magnification -------------------------------------------
+    // Icons swell as the cursor nears (cosine falloff). Centre uses the BASE
+    // width, not the live one — the live width depends on magFactor and would
+    // bind in a loop.
+    readonly property real magBase: implicitHeight - topInset - bottomInset
+    readonly property real magRange: 96
+    readonly property real magBoost: 0.6
+    readonly property real magFactor: {
+        if (!appListRoot.magnifyOn || root.isSeparator)
+            return 1;
+        const d = Math.abs(root.x + root.magBase / 2 - appListRoot.cursorX);
+        if (d >= root.magRange)
+            return 1;
+        return 1 + root.magBoost * (0.5 + 0.5 * Math.cos(Math.PI * d / root.magRange));
+    }
+    implicitWidth: isSeparator ? 1 : magBase * magFactor
+    Behavior on implicitWidth {
+        enabled: !root.isSeparator
+        NumberAnimation { duration: 70 }
+    }
+
+    // --- launch bounce ---------------------------------------------------------
+    property real bounceY: 0
+    transform: Translate { y: root.bounceY }
+    SequentialAnimation {
+        id: launchBounce
+        NumberAnimation { target: root; property: "bounceY"; to: -16; duration: 160; easing.type: Easing.OutQuad }
+        NumberAnimation { target: root; property: "bounceY"; to: 0; duration: 180; easing.type: Easing.InQuad }
+        NumberAnimation { target: root; property: "bounceY"; to: -8; duration: 130; easing.type: Easing.OutQuad }
+        NumberAnimation { target: root; property: "bounceY"; to: 0; duration: 150; easing.type: Easing.InQuad }
+    }
 
     Connections {
         target: DesktopEntries
@@ -63,6 +96,7 @@ DockButton {
 
     onClicked: {
         if (appToplevel.toplevels.length === 0) {
+            launchBounce.restart();
             root.desktopEntry?.execute();
             return;
         }
@@ -82,6 +116,20 @@ DockButton {
         active: !isSeparator
         sourceComponent: Item {
             anchors.centerIn: parent
+            // Swell upward from a fixed bottom edge, macOS-style.
+            transform: Translate { y: -(root.iconSize - root.iconBaseSize) / 2 }
+
+            // Light glass tile behind every icon — dark icons (kitty, zen,
+            // Yandex Music) were invisible against the near-black dock.
+            Rectangle {
+                anchors.centerIn: iconImageLoader
+                width: root.iconSize + 9
+                height: root.iconSize + 9
+                radius: width * 0.28
+                color: Qt.rgba(1, 1, 1, 0.10)
+                border.width: 1
+                border.color: Qt.rgba(1, 1, 1, 0.07)
+            }
 
             Loader {
                 id: iconImageLoader
@@ -128,10 +176,9 @@ DockButton {
                     delegate: Rectangle {
                         required property int index
                         radius: Appearance.rounding.full
-                        implicitWidth: (appToplevel.toplevels.length <= 3) ? 
-                            root.countDotWidth : root.countDotHeight // Circles when too many
+                        implicitWidth: root.countDotWidth
                         implicitHeight: root.countDotHeight
-                        color: appIsActive ? Appearance.colors.colPrimary : ColorUtils.transparentize(Appearance.colors.colOnLayer0, 0.4)
+                        color: appIsActive ? IslandStyle.accent : Qt.rgba(1, 1, 1, 0.35)
                     }
                 }
             }

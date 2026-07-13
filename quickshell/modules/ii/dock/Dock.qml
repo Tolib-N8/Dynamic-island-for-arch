@@ -11,6 +11,7 @@ import Quickshell
 import Quickshell.Widgets
 import Quickshell.Wayland
 import Quickshell.Hyprland
+import qs.modules.ii.island
 
 Scope { // Scope
     id: root
@@ -67,6 +68,11 @@ Scope { // Scope
                     anchors.fill: parent
                     implicitWidth: dockBackground.implicitWidth
 
+                    HoverHandler {
+                        id: dockHover
+                        onPointChanged: dockApps.cursorX = dockApps.mapFromItem(dockHoverRegion, point.position.x, 0).x
+                    }
+
                     Item { // Wrapper for the dock background
                         id: dockBackground
                         anchors {
@@ -80,6 +86,9 @@ Scope { // Scope
 
                         StyledRectangularShadow {
                             target: dockVisualBackground
+                            // Glass is see-through — a full-strength shadow behind it
+                            // reads as a dark smudge, not depth.
+                            opacity: 0.35
                         }
                         Rectangle { // The real rectangle that is visible
                             id: dockVisualBackground
@@ -87,10 +96,47 @@ Scope { // Scope
                             anchors.fill: parent
                             anchors.topMargin: Appearance.sizes.elevationMargin
                             anchors.bottomMargin: Appearance.sizes.hyprlandGapsOut
-                            color: Appearance.colors.colLayer0
+                            // Liquid glass: mostly transparent — Hyprland blurs what's
+                            // behind (custom/rules.lua: blur + ignore_alpha 0.15 for
+                            // quickshell:dock) — with a glossy top sheen and bright rim.
+                            // Light frosted tint only — dark stops read as pitch black
+                            // over the (dark) wallpaper corner behind the dock.
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0.30) }
+                                GradientStop { position: 0.5; color: Qt.rgba(0.88, 0.90, 0.97, 0.18) }
+                                GradientStop { position: 1.0; color: Qt.rgba(0.78, 0.81, 0.92, 0.13) }
+                            }
                             border.width: 1
-                            border.color: Appearance.colors.colLayer0Border
-                            radius: Appearance.rounding.large
+                            border.color: Qt.rgba(1, 1, 1, 0.30)
+                            radius: height / 2.6
+
+                            // gloss: soft light pooling in the upper half of the glass
+                            Rectangle {
+                                anchors {
+                                    top: parent.top
+                                    left: parent.left
+                                    right: parent.right
+                                    margins: 2
+                                }
+                                height: parent.height * 0.42
+                                radius: parent.radius - 2
+                                gradient: Gradient {
+                                    GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0.16) }
+                                    GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0.0) }
+                                }
+                            }
+                            // hairline top highlight — the "glass edge"
+                            Rectangle {
+                                anchors {
+                                    top: parent.top
+                                    topMargin: 1
+                                    horizontalCenter: parent.horizontalCenter
+                                }
+                                width: parent.width - parent.radius * 1.2
+                                height: 1
+                                radius: 0.5
+                                color: Qt.rgba(1, 1, 1, 0.30)
+                            }
                         }
 
                         RowLayout {
@@ -101,43 +147,12 @@ Scope { // Scope
                             spacing: 3
                             property real padding: 5
 
-                            VerticalButtonGroup {
-                                Layout.topMargin: Appearance.sizes.hyprlandGapsOut // why does this work
-                                GroupButton {
-                                    // Pin button
-                                    baseWidth: 35
-                                    baseHeight: 35
-                                    clickedWidth: baseWidth
-                                    clickedHeight: baseHeight + 20
-                                    buttonRadius: Appearance.rounding.normal
-                                    toggled: root.pinned
-                                    onClicked: root.pinned = !root.pinned
-                                    contentItem: MaterialSymbol {
-                                        text: "keep"
-                                        horizontalAlignment: Text.AlignHCenter
-                                        iconSize: Appearance.font.pixelSize.larger
-                                        color: root.pinned ? Appearance.m3colors.m3onPrimary : Appearance.colors.colOnLayer0
-                                    }
-                                }
-                            }
-                            DockSeparator {}
+                            // Apps only — the pin and app-grid buttons were dropped
+                            // for a clean macOS look (overview stays on Super).
                             DockApps {
                                 id: dockApps
                                 buttonPadding: dockRow.padding
-                            }
-                            DockSeparator {}
-                            DockButton {
-                                Layout.fillHeight: true
-                                onClicked: GlobalStates.overviewOpen = !GlobalStates.overviewOpen
-                                topInset: Appearance.sizes.hyprlandGapsOut + dockRow.padding
-                                bottomInset: Appearance.sizes.hyprlandGapsOut + dockRow.padding
-                                contentItem: MaterialSymbol {
-                                    anchors.fill: parent
-                                    horizontalAlignment: Text.AlignHCenter
-                                    font.pixelSize: parent.width / 2
-                                    text: "apps"
-                                    color: Appearance.colors.colOnLayer0
-                                }
+                                magnifyOn: dockHover.hovered
                             }
                         }
                     }

@@ -22,6 +22,11 @@ Item {
     property bool buttonHovered: false
     property bool requestDockShow: previewPopup.show
 
+    // macOS-style magnification: cursor x in THIS item's coordinates and whether
+    // the pointer is over the dock at all. Fed by Dock.qml's HoverHandler.
+    property real cursorX: -10000
+    property bool magnifyOn: false
+
     Layout.fillHeight: true
     Layout.topMargin: Appearance.sizes.hyprlandGapsOut
     implicitWidth: listView.implicitWidth
