@@ -7,6 +7,17 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-13 (night): Auto Tile toggle.** `services/WindowTiling.qml` +
+5th dashboard chip + `tiling` IPC. ON = tiling as usual; OFF = float every new
+window on its `openwindow` raw event (keeps own size). KEY GOTCHA for this
+machine: the Lua config plugin intercepts ALL dispatch strings (CLI and raw
+socket) — `hyprctl dispatch <string>` is evaluated as Lua inside
+`hl.dispatch(...)`. Plain dispatchers fail; use hl.dsp expressions:
+`hyprctl dispatch 'hl.dsp.window.float({ action = "on", window = "address:0x…" })'`.
+Introspect the API by evaluating a Lua function that returns
+`hl.dsp.exec_cmd(...)` (e.g. dump `pairs(hl.dsp.window)` to a file). Verified
+end-to-end with spawned test windows in both states.
+
 **2026-07-13 (evening): macOS dock — USER-APPROVED.** Magnification (cosine
 falloff, +60%, 96px range; centre from BASE width to avoid a binding loop
 через implicitWidth), launch bounce, glass tiles behind icons (kitty/zen/
