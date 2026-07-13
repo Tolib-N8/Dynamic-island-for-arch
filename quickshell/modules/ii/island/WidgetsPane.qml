@@ -818,25 +818,10 @@ Item {
                         active: Idle.inhibit
                         onToggled: Idle.toggleInhibit()
                     }
-                    ToggleChip {
-                        icon: "content_paste"
-                        label: "Clipboard"
-                        sublabel: Cliphist.entries.length > 0 ? `${Cliphist.entries.length} items` : "Empty"
-                        expandable: true
-                        onToggled: pane.detailPage = "clip"
-                        onExpanded: pane.detailPage = "clip"
-                    }
-                    ToggleChip {
-                        // switchwall.sh drives hyprctl/swww — Hyprland only.
-                        visible: (Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE") ?? "").length > 0
-                        icon: "wallpaper"
-                        label: "Wallpaper"
-                        sublabel: "Theme from image"
-                        expandable: true
-                        onToggled: Island.open("wallpapers", Island.openScreen)
-                        onExpanded: Island.open("wallpapers", Island.openScreen)
-                    }
                 }
+                // Clipboard history and the wallpaper picker have no chips — six
+                // didn't fit the row. They stay reachable via `island clipboard`
+                // (Meta+V) and `island wallpapers` IPC.
 
                 RowLayout {
                     Layout.fillWidth: true
