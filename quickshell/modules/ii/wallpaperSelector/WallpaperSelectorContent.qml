@@ -12,6 +12,13 @@ import Quickshell.Io
 
 MouseArea {
     id: root
+    // Emitted on every close action. The standalone panel ignores it (it watches
+    // GlobalStates.wallpaperSelectorOpen); the notch surface closes the island.
+    signal dismissed()
+    function dismiss() {
+        GlobalStates.wallpaperSelectorOpen = false;
+        root.dismissed();
+    }
     property int columns: 4
     property real previewCellAspectRatio: 4 / 3
     property bool useDarkMode: Appearance.m3colors.darkmode
@@ -58,7 +65,7 @@ MouseArea {
 
     Keys.onPressed: event => {
         if (event.key === Qt.Key_Escape) {
-            GlobalStates.wallpaperSelectorOpen = false;
+            root.dismiss();
             event.accepted = true;
         } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) { // Intercept Ctrl+V to handle "paste to go to" in pickers
             root.handleFilePasting(event);
@@ -357,11 +364,11 @@ MouseArea {
                                 implicitWidth: height
                                 onClicked: {
                                     Wallpapers.openFallbackPicker(root.useDarkMode);
-                                    GlobalStates.wallpaperSelectorOpen = false;
+                                    root.dismiss();
                                 }
                                 altAction: () => {
                                     Wallpapers.openFallbackPicker(root.useDarkMode);
-                                    GlobalStates.wallpaperSelectorOpen = false;
+                                    root.dismiss();
                                     Config.options.wallpaperSelector.useSystemFileDialog = true;
                                 }
                                 text: "open_in_new"
@@ -427,7 +434,7 @@ MouseArea {
 
                         ToolbarPairedFab {
                             iconText: "close"
-                            onClicked: GlobalStates.wallpaperSelectorOpen = false;
+                            onClicked: root.dismiss();
                             StyledToolTip {
                                 text: Translation.tr("Cancel wallpaper selection")
                             }
@@ -450,7 +457,7 @@ MouseArea {
     Connections {
         target: Wallpapers
         function onChanged() {
-            GlobalStates.wallpaperSelectorOpen = false;
+            root.dismiss();
         }
     }
 }

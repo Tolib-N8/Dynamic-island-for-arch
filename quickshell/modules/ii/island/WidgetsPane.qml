@@ -826,6 +826,16 @@ Item {
                         onToggled: pane.detailPage = "clip"
                         onExpanded: pane.detailPage = "clip"
                     }
+                    ToggleChip {
+                        // switchwall.sh drives hyprctl/swww — Hyprland only.
+                        visible: (Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE") ?? "").length > 0
+                        icon: "wallpaper"
+                        label: "Wallpaper"
+                        sublabel: "Theme from image"
+                        expandable: true
+                        onToggled: Island.open("wallpapers", Island.openScreen)
+                        onExpanded: Island.open("wallpapers", Island.openScreen)
+                    }
                 }
 
                 RowLayout {

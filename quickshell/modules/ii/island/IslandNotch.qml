@@ -4,6 +4,7 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
+import qs.modules.ii.wallpaperSelector
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
@@ -48,7 +49,8 @@ Scope {
             "launcher":  { "w": 560,  "h": 380 },
             "power":     { "w": 320,  "h": 92  },
             "tools":     { "w": 440,  "h": 84  },
-            "agent":     { "w": 460,  "h": 300 }
+            "agent":     { "w": 460,  "h": 300 },
+            "wallpapers": { "w": 1200, "h": 620 }
         })
 
     // Media (shared across monitors). Show only while actively playing.
@@ -106,6 +108,28 @@ Scope {
         if (n.length > 0)
             return n;
         return Quickshell.screens.length > 0 ? (Quickshell.screens[0].name ?? "") : "";
+    }
+
+    // Surface control over IPC — shared by both editions (`qs -c <cfg> ipc call
+    // island <surface>`): Hyprland keybinds and KDE shortcuts use the same verbs.
+    IpcHandler {
+        target: "island"
+
+        function dashboard(): void { Island.toggle("dashboard", root.focusedScreenName()); }
+        function agent(): void { Island.toggle("agent", root.focusedScreenName()); }
+        function power(): void { Island.toggle("power", root.focusedScreenName()); }
+        function wallpapers(): void { Island.toggle("wallpapers", root.focusedScreenName()); }
+        function close(): void { Island.close(); }
+        // Clipboard history (Meta+V). Second invocation closes.
+        function clipboard(): void {
+            if (Island.openSurface === "dashboard") {
+                Island.close();
+            } else {
+                Island.dashboardTab = 0;
+                Island.dashboardDetail = "clip";
+                Island.open("dashboard", root.focusedScreenName());
+            }
+        }
     }
 
     // Permission is top-priority + sticky: auto-open the agent surface when a
@@ -806,6 +830,8 @@ Scope {
                                 return overviewComp;
                             case "agent":
                                 return agentComp;
+                            case "wallpapers":
+                                return wallpapersComp;
                             default:
                                 return null;
                             }
@@ -817,6 +843,7 @@ Scope {
                     Component { id: launcherComp; LauncherSurface { focus: true } }
                     Component { id: overviewComp; OverviewSurface { focus: true } }
                     Component { id: agentComp; AgentSurface { focus: true } }
+                    Component { id: wallpapersComp; WallpaperSelectorContent { focus: true; onDismissed: Island.close() } }
                 }
             }
         }

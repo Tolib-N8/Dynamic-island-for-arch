@@ -65,27 +65,9 @@ ShellRoot {
     // On Plasma there are no side islands to trigger surfaces, and KWin doesn't
     // speak hyprland_global_shortcuts. So expose the notch over IPC — bind a KDE
     // custom shortcut to e.g. `qs -c openagentisland-plasma ipc call island dashboard`.
-    IpcHandler {
-        target: "island"
-
-        function _screen(): string {
-            return Quickshell.screens.length > 0 ? (Quickshell.screens[0].name ?? "") : "";
-        }
-        function dashboard(): void { Island.toggle("dashboard", _screen()); }
-        function agent(): void { Island.toggle("agent", _screen()); }
-        function power(): void { Island.toggle("power", _screen()); }
-        function close(): void { Island.close(); }
-        // Clipboard history (bind to Meta+V). Second press closes.
-        function clipboard(): void {
-            if (Island.openSurface === "dashboard") {
-                Island.close();
-            } else {
-                Island.dashboardTab = 0;
-                Island.dashboardDetail = "clip";
-                Island.open("dashboard", _screen());
-            }
-        }
-    }
+    // The "island" IPC target now lives in IslandNotch.qml (shared with the
+    // Hyprland edition); Hyprland.focusedMonitor is null on KWin, so it falls
+    // back to the first screen — same behavior as before.
 
     // The "Code" voice assistant drives the notch as its overlay (replacing its
     // own quickshell overlay.qml). See ai-assistant/scripts/common.py.
