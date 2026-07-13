@@ -7,6 +7,19 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-13: Wallpaper picker in the notch (user back on Hyprland).** New
+"wallpapers" surface (1200×620) embedding end-4's `WallpaperSelectorContent`
+(thumbnails/search/folder nav; apply → switchwall.sh re-themes the island).
+Content got a `dismissed()` signal — its close paths only flipped
+`GlobalStates.wallpaperSelectorOpen`, meaningless embedded; notch closes the
+island on it (Esc/apply/close/fallback-picker). Opened via the new Wallpaper
+chip (Widgets tab, Hyprland-gated — switchwall is hyprctl-based) or
+`island wallpapers` IPC. The `island` IPC target moved from plasma/shell.qml
+into IslandNotch — both editions now share verbs
+(dashboard/agent/power/clipboard/wallpapers/close); screen resolution via
+focusedScreenName() (falls back to screens[0] on KWin). Verified live on the
+user's running Hyprland session via hot-reload + `island wallpapers` + grim.
+
 **2026-07-12: Bluetooth auto-revive after resume (`SleepRestore.qml`).** BT kept
 coming back soft-blocked/unpowered after every suspend (adapter re-registers:
 fresh rfkill index each wake; no "block" actor visible in journal). Service
