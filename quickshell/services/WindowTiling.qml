@@ -35,7 +35,7 @@ Singleton {
         } else {
             // Guarded so repeated toggles never stack duplicate rules.
             Quickshell.execDetached(["hyprctl", "eval",
-                "if not OAI_FLOAT_RULE then OAI_FLOAT_RULE = hl.window_rule({match={class=\".*\"}, float=true}) end"]);
+                "if not OAI_FLOAT_RULE then OAI_FLOAT_RULE = hl.window_rule({match={class=\".*\"}, float=true, center=true}) end"]);
         }
     }
 
