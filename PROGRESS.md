@@ -7,17 +7,18 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
-**2026-07-16: Lock-screen notch — shared with the desktop notch.** `LockNotch`
-in `modules/ii/lock/`, instantiated top-centre in LockSurface: idle = padlock +
-"Locked" pill (desktop-notch silhouette, goey morph); media available = THE
-desktop notch's media row. Refactor for the sharing: `NotchMediaRow.qml`
-(island module) + `Cava.qml` / `CoverArt.qml` singletons (one cava process,
-stable cached art) — IslandNotch rewired to them (inline cavaProc/art
-machinery deleted). VERIFY LOCK COMPONENTS BEFORE LOCKING: lock QML compiles
-lazily at first lock, and a broken LockSurface = no password box. Test-render
-trick: drop a scratch `test-locknotch.qml` in the config root and run
-`qs -p ~/.config/quickshell/openagentisland/test-locknotch.qml` — qs.* imports
-resolve, component renders in a normal window.
+**2026-07-16: Notch above the session lock (take 3 — user wanted THE notch,
+not a lookalike).** Hyprland 0.55 `above_lock` layer rule (Lua:
+`hl.layer_rule({match={namespace="quickshell:islandNotch"}, above_lock=true})`,
+in custom/rules.lua) keeps the real notch window visible over the lock.
+While `GlobalStates.screenLocked`: displaySource forces "locked" (padlock +
+Locked pill) or "media" (the shared row) — nothing else renders; locking
+closes any open surface; notch-body clicks ignored; keyboardFocus never
+granted during lock (password box owns it). Takes 1–2 (separate LockNotch
+component in LockSurface) were reverted, but their refactor stays:
+`NotchMediaRow.qml` + `Cava`/`CoverArt` singletons (single cava process,
+shared art cache) now feed the desktop notch. Layer rules apply at MAP time —
+after installing the rule, remap the notch (any qml hot-reload).
 
 **2026-07-15: Auto Tile v2 — float at map time, centred — USER-VERIFIED.**
 The v1 reactive approach (float on the `openwindow` IPC event) let windows
