@@ -19,6 +19,12 @@ Scope {
         color: "transparent"
         Loader {
             active: GlobalStates.screenLocked
+            // Async: commit the (transparent) lock surface immediately instead of
+            // blocking on building the whole surface content. Until the lock
+            // surface renders, Hyprland paints its black primer over EVERYTHING —
+            // including above_lock layers — which read as the notch blinking out
+            // for a second on every lock.
+            asynchronous: true
             anchors.fill: parent
             opacity: active ? 1 : 0
             Behavior on opacity {
