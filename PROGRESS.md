@@ -7,6 +7,22 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-15: Auto Tile v2 — float at map time, centred — USER-VERIFIED.**
+The v1 reactive approach (float on the `openwindow` IPC event) let windows
+flash tiled/full-size for ~0.5s. v2 installs a runtime rule via `hyprctl eval`:
+`hl.window_rule({match={class=".*"}, float=true, center=true})` — windows are
+born floating, centred, at their client-requested size. Turning tiling back on
+= `hyprctl reload` (runtime rules have NO removal API and survive GC — reload
+rebuilds a fresh Lua state; measured safe: hyprland.start exec block does not
+re-fire, process counts unchanged). Dead ends, verified: `hyprctl keyword` is
+rejected by the non-legacy parser; a `window.open_early` hook (property write
+or dispatch) reports success but the float does not stick; `when`-style
+conditional match keys don't exist.
+LESSON (cost: 16 shell instances): the session shell process is named
+`quickshell`, not `qs` — `pgrep/pkill -x qs` misses it. Always check with
+`pgrep -af "quickshell|^qs "` or `qs list --all`; kitty's huge float size in
+tests was its own remember_window_size, not a compositor bug.
+
 **2026-07-13 (night): Auto Tile toggle.** `services/WindowTiling.qml` +
 5th dashboard chip + `tiling` IPC. ON = tiling as usual; OFF = float every new
 window on its `openwindow` raw event (keeps own size). KEY GOTCHA for this
