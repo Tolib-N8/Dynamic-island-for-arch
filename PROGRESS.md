@@ -7,6 +7,18 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-16: Lock-screen notch — shared with the desktop notch.** `LockNotch`
+in `modules/ii/lock/`, instantiated top-centre in LockSurface: idle = padlock +
+"Locked" pill (desktop-notch silhouette, goey morph); media available = THE
+desktop notch's media row. Refactor for the sharing: `NotchMediaRow.qml`
+(island module) + `Cava.qml` / `CoverArt.qml` singletons (one cava process,
+stable cached art) — IslandNotch rewired to them (inline cavaProc/art
+machinery deleted). VERIFY LOCK COMPONENTS BEFORE LOCKING: lock QML compiles
+lazily at first lock, and a broken LockSurface = no password box. Test-render
+trick: drop a scratch `test-locknotch.qml` in the config root and run
+`qs -p ~/.config/quickshell/openagentisland/test-locknotch.qml` — qs.* imports
+resolve, component renders in a normal window.
+
 **2026-07-15: Auto Tile v2 — float at map time, centred — USER-VERIFIED.**
 The v1 reactive approach (float on the `openwindow` IPC event) let windows
 flash tiled/full-size for ~0.5s. v2 installs a runtime rule via `hyprctl eval`:
