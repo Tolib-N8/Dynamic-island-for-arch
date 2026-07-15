@@ -98,12 +98,27 @@ Scope {
         surface: root.sessionLockSurface
     }
 
+    Timer {
+        id: engageTimer
+        interval: 170
+        onTriggered: {
+            GlobalStates.screenLocked = true;
+            GlobalStates.lockEngaging = false;
+        }
+    }
+
     function lock() {
         if (Config.options.lock.useHyprlock) {
             Quickshell.execDetached(["bash", "-c", "pidof hyprlock || hyprlock"]);
             return;
         }
-        GlobalStates.screenLocked = true;
+        if (GlobalStates.screenLocked)
+            return;
+        // Let the notch dip out of view first: between the lock request and the
+        // first lock-surface frame Hyprland cannot render above_lock layers, so
+        // an abrupt lock reads as the notch blinking. The dip hides that gap.
+        GlobalStates.lockEngaging = true;
+        engageTimer.restart();
     }
 
     IpcHandler {

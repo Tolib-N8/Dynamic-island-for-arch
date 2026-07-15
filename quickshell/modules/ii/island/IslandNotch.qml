@@ -158,6 +158,14 @@ Scope {
             // notch on the others.
             readonly property bool ownsOpen: Island.openSurface !== "" && Island.openScreen === (notchWindow.screen.name ?? "")
 
+            // Lock-engage dip: slide out of view while Hyprland cannot render
+            // above_lock layers (lock requested, lock surface not yet drawn),
+            // then slide back in already wearing the Locked/media state.
+            property real lockDipY: GlobalStates.lockEngaging ? -(targetHeight + root.shoulderSize + 8) : 0
+            Behavior on lockDipY {
+                NumberAnimation { duration: 160; easing.type: Easing.InQuad }
+            }
+
             // Auto-opened surfaces (permission cards) mask only the notch body so
             // the rest of the screen stays usable; user-opened surfaces mask the
             // whole screen for click-outside-to-close.
@@ -322,6 +330,7 @@ Scope {
                 anchors.right: notch.left
                 anchors.rightMargin: -1
                 anchors.top: parent.top
+                transform: Translate { y: notchWindow.lockDipY }
             }
             RoundCorner {
                 corner: RoundCorner.CornerEnum.TopLeft
@@ -330,12 +339,14 @@ Scope {
                 anchors.left: notch.right
                 anchors.leftMargin: -1
                 anchors.top: parent.top
+                transform: Translate { y: notchWindow.lockDipY }
             }
 
             Rectangle {
                 id: notch
                 anchors.top: parent.top
                 anchors.horizontalCenter: parent.horizontalCenter
+                transform: Translate { y: notchWindow.lockDipY }
 
                 width: notchWindow.targetWidth
                 height: notchWindow.targetHeight

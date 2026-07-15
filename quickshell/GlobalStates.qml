@@ -22,6 +22,9 @@ Singleton {
     property bool regionSelectorOpen: false
     property bool searchOpen: false
     property bool screenLocked: false
+    // True for the ~170ms before screenLocked flips: the notch uses it to dip
+    // out of view, masking Hyprland's above_lock render gap during lock engage.
+    property bool lockEngaging: false
     property bool screenLockContainsCharacters: false
     property bool screenUnlockFailed: false
     property bool screenTranslatorOpen: false
