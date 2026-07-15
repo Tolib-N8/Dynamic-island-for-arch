@@ -96,13 +96,6 @@ MouseArea {
     //     }
     // }
 
-    // Top-centre notch: "Locked" pill, or a mini player while media plays.
-    LockNotch {
-        anchors.top: parent.top
-        anchors.horizontalCenter: parent.horizontalCenter
-        opacity: root.toolbarOpacity
-    }
-
     // Main toolbar: password box
     Toolbar {
         id: mainIsland

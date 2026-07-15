@@ -91,6 +91,16 @@ Scope {
         }
     }
 
+    // While locked the notch stays visible (layer rule above_lock) but is
+    // reduced to "Locked" + the media row — close anything that was open.
+    Connections {
+        target: GlobalStates
+        function onScreenLockedChanged() {
+            if (GlobalStates.screenLocked)
+                Island.close();
+        }
+    }
+
     // Permission is top-priority + sticky: auto-open the agent surface when a
     // request arrives (if nothing else is open) on the FOCUSED monitor, and close
     // back to compact when the last one is resolved.
@@ -122,7 +132,7 @@ Scope {
             // becomes the "active window" and Meta+Q would close the notch.
             // Island.wantsKeyboard: narrow exception (Wi-Fi password typing) — the
             // Meta+Q risk window is tiny while the user is actively typing a password.
-            WlrLayershell.keyboardFocus: (notchWindow.ownsOpen && (root.onHyprland || Island.wantsKeyboard)) ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+            WlrLayershell.keyboardFocus: (notchWindow.ownsOpen && !GlobalStates.screenLocked && (root.onHyprland || Island.wantsKeyboard)) ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
             color: "transparent"
             // Floating island — don't reserve a strip; windows pass under it like the
             // left/right islands (wallpaper breathes through the gaps).
@@ -160,7 +170,8 @@ Scope {
             property string expandedSource: ""  // transient OSD: volume|brightness|notification|""
             // Agent-forward: an active agent outranks media for the notch display
             // (precedence: transient OSD > agent > media). Music keeps playing.
-            property string displaySource: VoiceAssistant.active ? "assistant"
+            property string displaySource: GlobalStates.screenLocked ? (root.mediaActive ? "media" : "locked")
+                : VoiceAssistant.active ? "assistant"
                 : (expandedSource !== "" ? expandedSource
                 : (AgentService.active ? "agent"
                 : (root.mediaActive ? "media" : "")))
@@ -275,6 +286,8 @@ Scope {
                     return agentUI.implicitWidth;
                 case "assistant":
                     return assistantUI.implicitWidth;
+                case "locked":
+                    return lockUI.implicitWidth;
                 default:
                     return 0;
                 }
@@ -288,7 +301,7 @@ Scope {
             property real targetHeight: islandState === "open" ? (dashboardCompact ? 300 : (root.surfaceSizes[Island.openSurface]?.h ?? root.maxHeight))
                 : islandState === "expanded" ? (
                     displaySource === "assistant" ? Math.max(44, assistantUI.implicitHeight + 26) // 13 top + 13 bottom
-                    : (displaySource === "media" || displaySource === "agent" ? 40 : 54))
+                    : (displaySource === "media" || displaySource === "agent" || displaySource === "locked" ? 40 : 54))
                 : 36
 
             // Full-screen click-catcher (only while open). Sits BEHIND the notch
@@ -349,6 +362,8 @@ Scope {
                     // surface is open, surfaceHost's absorber catches clicks (no
                     // accidental close); close via Esc or re-clicking the trigger pill.
                     onClicked: {
+                        if (GlobalStates.screenLocked)
+                            return; // Locked: only the media row's own controls work
                         // Clicking a notification invokes its default action (open the app /
                         // follow the notification) — the notch is the notification server,
                         // so actions work natively — then dismisses the morph.
@@ -587,7 +602,30 @@ Scope {
                     }
                 }
 
-                // ---- media: THE shared notch media row (also on the lock screen) ----
+                // ---- locked: padlock + Locked (no media available) ----
+                RowLayout {
+                    id: lockUI
+                    anchors.centerIn: parent
+                    spacing: 9
+                    opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "locked" ? 1 : 0
+                    visible: opacity > 0
+                    Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+
+                    MaterialSymbol {
+                        text: "lock"
+                        fill: 1
+                        iconSize: 17
+                        color: IslandStyle.textColor
+                    }
+                    StyledText {
+                        text: Translation.tr("Locked")
+                        font.pixelSize: Appearance.font.pixelSize.small
+                        font.weight: Font.DemiBold
+                        color: IslandStyle.textColor
+                    }
+                }
+
+                // ---- media: THE shared notch media row (also above the lock) ----
                 NotchMediaRow {
                     id: mediaUI
                     anchors.centerIn: parent
