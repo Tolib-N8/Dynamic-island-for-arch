@@ -56,50 +56,9 @@ Scope {
     // Media (shared across monitors). Show only while actively playing.
     readonly property var activePlayer: MprisController.activePlayer
     readonly property bool mediaActive: activePlayer?.isPlaying ?? false
-    property list<real> visualizerPoints: []
 
-    // Cover art: download the (often remote / flickery) trackArtUrl to a stable local
-    // cache file so the art doesn't vanish when the player rewrites/clears the URL.
-    readonly property string artUrl: activePlayer?.trackArtUrl ?? ""
-    readonly property string artFilePath: artUrl.length > 0 ? `${Directories.coverArt}/${Qt.md5(artUrl)}` : ""
-    // Persisted local art path. Only cleared on an actual TRACK change — NOT when the
-    // player momentarily rewrites/clears artUrl (which made the art vanish). Set only
-    // once the cache file is confirmed present (exit 0).
-    property string displayedArt: ""
-    readonly property string trackKey: activePlayer?.trackTitle ?? ""
-    onTrackKeyChanged: displayedArt = ""
-    onArtFilePathChanged: {
-        if (artFilePath.length === 0)
-            return; // transient empty URL — keep the current art
-        coverArtDownloader.outFile = artFilePath;
-        coverArtDownloader.targetUrl = artUrl;
-        coverArtDownloader.running = true;
-    }
-    Process {
-        id: coverArtDownloader
-        property string targetUrl: ""
-        property string outFile: ""
-        command: ["bash", "-c", `[ -f '${outFile}' ] || curl -4 -sSL '${targetUrl}' -o '${outFile}'`]
-        onExited: (code, status) => {
-            if (code === 0)
-                root.displayedArt = Qt.resolvedUrl(coverArtDownloader.outFile);
-        }
-    }
-
-    Process {
-        id: cavaProc
-        running: root.mediaActive
-        onRunningChanged: {
-            if (!cavaProc.running)
-                root.visualizerPoints = [];
-        }
-        command: ["cava", "-p", `${FileUtils.trimFileProtocol(Directories.scriptPath)}/cava/raw_output_config.txt`]
-        stdout: SplitParser {
-            onRead: data => {
-                root.visualizerPoints = data.split(";").map(p => parseFloat(p.trim())).filter(p => !isNaN(p));
-            }
-        }
-    }
+    // Cover art and the cava feed live in the CoverArt / Cava singletons —
+    // shared with the lock-screen notch, which renders the same media row.
 
     // The monitor that currently has keyboard focus — where auto-opened surfaces
     // (e.g. an incoming permission) should appear. Falls back to the first screen.
@@ -258,23 +217,6 @@ Scope {
                 NumberAnimation { target: notchWindow; property: "permFlash"; to: 0.35; duration: 220; easing.type: Easing.InOutQuad }
                 NumberAnimation { target: notchWindow; property: "permFlash"; to: 1; duration: 130; easing.type: Easing.OutQuad }
                 NumberAnimation { target: notchWindow; property: "permFlash"; to: 0; duration: 650; easing.type: Easing.InQuad }
-            }
-
-            // Downsampled equalizer bars from the cava points (0..1).
-            readonly property int barCount: 22
-            property var barValues: {
-                const pts = root.visualizerPoints;
-                const n = barCount;
-                let out = [];
-                for (let i = 0; i < n; i++) {
-                    if (pts && pts.length > 0) {
-                        const idx = Math.floor(i * pts.length / n);
-                        out.push(Math.max(0, Math.min(1, (pts[idx] ?? 0) / 1000)));
-                    } else {
-                        out.push(0);
-                    }
-                }
-                return out;
             }
 
             Connections {
@@ -645,84 +587,13 @@ Scope {
                     }
                 }
 
-                // ---- media: art · equalizer bars · play/pause (minimal, reference-style) ----
-                RowLayout {
+                // ---- media: THE shared notch media row (also on the lock screen) ----
+                NotchMediaRow {
                     id: mediaUI
                     anchors.centerIn: parent
-                    spacing: 10
                     opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "media" ? 1 : 0
                     visible: opacity > 0
                     Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
-
-                    Rectangle {
-                        Layout.alignment: Qt.AlignVCenter
-                        implicitWidth: 26
-                        implicitHeight: 26
-                        radius: 7
-                        color: Qt.rgba(1, 1, 1, 0.08)
-                        StyledImage {
-                            id: artImg
-                            anchors.fill: parent
-                            source: root.displayedArt
-                            fillMode: Image.PreserveAspectCrop
-                            visible: root.displayedArt !== "" && status === Image.Ready
-                            layer.enabled: true
-                            layer.effect: OpacityMask {
-                                maskSource: Rectangle {
-                                    width: artImg.width
-                                    height: artImg.height
-                                    radius: 7
-                                }
-                            }
-                        }
-                        MaterialSymbol {
-                            anchors.centerIn: parent
-                            visible: !artImg.visible
-                            text: "music_note"
-                            iconSize: 16
-                            color: IslandStyle.textColor
-                        }
-                    }
-
-                    // Equalizer bars
-                    Item {
-                        Layout.alignment: Qt.AlignVCenter
-                        implicitWidth: 112
-                        implicitHeight: 24
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 2
-                            Repeater {
-                                model: notchWindow.barCount
-                                delegate: Item {
-                                    id: barCell
-                                    required property int index
-                                    width: 3
-                                    height: 24
-                                    Rectangle {
-                                        anchors.centerIn: parent
-                                        width: 3
-                                        radius: 1.5
-                                        color: IslandStyle.accent
-                                        height: Math.max(3, (notchWindow.barValues[barCell.index] ?? 0) * 22)
-                                        Behavior on height { NumberAnimation { duration: 90; easing.type: Easing.OutQuad } }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    MaterialSymbol {
-                        Layout.alignment: Qt.AlignVCenter
-                        iconSize: 24
-                        fill: 1
-                        color: IslandStyle.textColor
-                        text: root.mediaActive ? "pause" : "play_arrow"
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: root.activePlayer?.togglePlaying()
-                        }
-                    }
                 }
 
                 // ---- agent (compact): pixel mascot + status ----
@@ -777,9 +648,9 @@ Scope {
                         StyledImage {
                             id: miniArt
                             anchors.fill: parent
-                            source: root.displayedArt
+                            source: CoverArt.displayedArt
                             fillMode: Image.PreserveAspectCrop
-                            visible: root.displayedArt !== "" && status === Image.Ready
+                            visible: CoverArt.displayedArt !== "" && status === Image.Ready
                             layer.enabled: true
                             layer.effect: OpacityMask {
                                 maskSource: Rectangle { width: miniArt.width; height: miniArt.height; radius: 5 }
