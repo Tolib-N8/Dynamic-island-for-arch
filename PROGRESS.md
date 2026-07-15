@@ -7,6 +7,19 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-16 (later): lock blink killed — USER-VERIFIED.** Two layers:
+(1) async Loader for the lock-surface content — building LockSurface
+synchronously delayed the first lock-surface frame, and Hyprland paints a
+black primer over everything (above_lock included) until it renders;
+(2) the residual blink is Hyprland's protocol window — Renderer.cpp skips
+above_lock layers in the normal pass the instant isSessionLocked flips, and
+the lockscreen pass only draws them once the lock surface has a frame. Not
+fixable from QML — masked instead: `GlobalStates.lockEngaging` makes the notch
+dip off-screen (160ms, body+shoulders via Translate transforms — anchors don't
+follow transforms, each item needs its own), the real lock engages 170ms later.
+Also from the Hyprland source: `above_lock = 2` required for INPUT above the
+lock (ViewHitTester skips !=2); 1/true is render-only.
+
 **2026-07-16: Notch above the session lock (take 3 — user wanted THE notch,
 not a lookalike).** Hyprland 0.55 `above_lock` layer rule (Lua:
 `hl.layer_rule({match={namespace="quickshell:islandNotch"}, above_lock=true})`,
