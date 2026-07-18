@@ -156,7 +156,12 @@ Scope {
             // becomes the "active window" and Meta+Q would close the notch.
             // Island.wantsKeyboard: narrow exception (Wi-Fi password typing) — the
             // Meta+Q risk window is tiny while the user is actively typing a password.
-            WlrLayershell.keyboardFocus: (notchWindow.ownsOpen && !GlobalStates.screenLocked && (root.onHyprland || Island.wantsKeyboard)) ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+            // The wallpaper strip is keyboard-driven (arrows/Enter) and opens
+            // from a keybind — OnDemand only gains focus after a click, so it
+            // gets Exclusive instead (modal while open).
+            WlrLayershell.keyboardFocus: (notchWindow.ownsOpen && !GlobalStates.screenLocked && (root.onHyprland || Island.wantsKeyboard))
+                ? (Island.openSurface === "wallpapers" && root.onHyprland ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand)
+                : WlrKeyboardFocus.None
             color: "transparent"
             // Floating island — don't reserve a strip; windows pass under it like the
             // left/right islands (wallpaper breathes through the gaps).

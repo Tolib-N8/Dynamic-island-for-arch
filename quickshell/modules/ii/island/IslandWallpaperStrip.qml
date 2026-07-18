@@ -15,12 +15,26 @@ FocusScope {
     id: root
     focus: true
     Keys.onEscapePressed: Island.close()
+    // Arrow navigation + Enter to apply.
+    Keys.onLeftPressed: strip.decrementCurrentIndex()
+    Keys.onRightPressed: strip.incrementCurrentIndex()
+    Keys.onReturnPressed: root.applyCurrent()
+    Keys.onEnterPressed: root.applyCurrent()
+
+    function applyCurrent() {
+        const p = Wallpapers.wallpapers[strip.currentIndex];
+        if (p) {
+            Wallpapers.apply(p);
+            Island.close();
+        }
+    }
 
     readonly property int previewW: 300
     readonly property int previewH: 169
 
     // Open centred on the wallpaper that is currently set.
     Component.onCompleted: {
+        root.forceActiveFocus();
         const cur = Config.options?.background.wallpaperPath ?? "";
         const idx = Wallpapers.wallpapers.indexOf(cur);
         if (idx >= 0)
@@ -119,8 +133,7 @@ FocusScope {
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
                         if (cell.centred) {
-                            Wallpapers.apply(cell.modelData);
-                            Island.close();
+                            root.applyCurrent();
                         } else {
                             strip.currentIndex = cell.index;
                         }
@@ -169,13 +182,7 @@ FocusScope {
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        const p = Wallpapers.wallpapers[strip.currentIndex];
-                        if (p) {
-                            Wallpapers.apply(p);
-                            Island.close();
-                        }
-                    }
+                    onClicked: root.applyCurrent()
                 }
             }
         }
