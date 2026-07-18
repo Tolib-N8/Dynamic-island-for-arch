@@ -20,7 +20,13 @@ Item {
     property color usedColor: Appearance.colors.colOnLayer0
     property color activeColor: Appearance.colors.colPrimary
 
-    readonly property HyprlandMonitor monitor: Hyprland.monitorFor(root.QsWindow.window?.screen)
+    // Re-resolve after monitor list changes: DPMS off/on (StandBy, hypridle)
+    // makes Hyprland re-create monitor objects, and a captured stale one stops
+    // receiving activeWorkspace updates — the dots freeze.
+    readonly property HyprlandMonitor monitor: {
+        void Hyprland.monitors.values;
+        return Hyprland.monitorFor(root.QsWindow.window?.screen);
+    }
     readonly property int activeWs: monitor?.activeWorkspace?.id ?? 1
     readonly property int group: Math.floor((activeWs - 1) / workspacesShown)
 
