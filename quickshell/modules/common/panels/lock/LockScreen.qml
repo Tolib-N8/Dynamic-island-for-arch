@@ -98,6 +98,33 @@ Scope {
         surface: root.sessionLockSurface
     }
 
+    // Password is Latin — a Russian layout at the lock prompt means typing it
+    // twice. Force the first configured layout (us) on every keyboard when
+    // locking; restore the pre-lock layout after a successful unlock.
+    property int preLockLayoutIndex: -1
+    function forcePasswordLayout() {
+        const idx = HyprlandXkb.layoutCodes.indexOf(HyprlandXkb.currentLayoutCode);
+        root.preLockLayoutIndex = idx > 0 ? idx : -1;
+        if (idx > 0)
+            Quickshell.execDetached(["bash", "-c",
+                "for KB in $(hyprctl devices -j | jq -r '.keyboards[].name'); do hyprctl switchxkblayout \"$KB\" 0; done"]);
+    }
+    function restorePreLockLayout() {
+        if (root.preLockLayoutIndex > 0)
+            Quickshell.execDetached(["bash", "-c",
+                `for KB in $(hyprctl devices -j | jq -r '.keyboards[].name'); do hyprctl switchxkblayout "$KB" ${root.preLockLayoutIndex}; done`]);
+        root.preLockLayoutIndex = -1;
+    }
+    Connections {
+        target: GlobalStates
+        function onScreenLockedChanged() {
+            if (GlobalStates.screenLocked)
+                root.forcePasswordLayout();
+            else
+                root.restorePreLockLayout();
+        }
+    }
+
     Timer {
         id: engageTimer
         interval: 170
