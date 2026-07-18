@@ -780,9 +780,11 @@ Item {
                 visible: pane.detailPage === ""
                 spacing: 8
 
-                RowLayout {
+                GridLayout {
                     Layout.fillWidth: true
-                    spacing: 8
+                    columns: 3
+                    rowSpacing: 8
+                    columnSpacing: 8
                     ToggleChip {
                         icon: Network.materialSymbol
                         label: "Wi-Fi"
@@ -826,6 +828,15 @@ Item {
                         sublabel: WindowTiling.autoTile ? "Windows auto-size" : "Windows float"
                         active: WindowTiling.autoTile
                         onToggled: WindowTiling.autoTile = !WindowTiling.autoTile
+                    }
+                    ToggleChip {
+                        // Hyprland-only: strips blur/animations via hl.config.
+                        visible: (Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE") ?? "").length > 0
+                        icon: "sports_esports"
+                        label: "Game Mode"
+                        sublabel: GameMode.on ? "Max performance" : "Off"
+                        active: GameMode.on
+                        onToggled: GameMode.on = !GameMode.on
                     }
                 }
                 // Clipboard history and the wallpaper picker have no chips — six
