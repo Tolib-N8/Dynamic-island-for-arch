@@ -7,6 +7,23 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-19: visual+functional pack (4 features).**
+- **Breathing window border**: matugen template
+  (`~/.config/matugen/templates/hyprland/colors.lua`) now emits a
+  primary→tertiary gradient for `general.col.active_border` — Lua wrapper
+  requires TABLE form `{colors={...}, angle=45}`, plain gradient STRINGS are
+  rejected — plus `borderangle` loop animation (custom/general.lua).
+- **Pomodoro** (`services/Pomodoro.qml`): 25/5 cycle, notify on phase flips;
+  countdown lives in the notch (priority above agent), right-click the clock
+  pill or `island pomodoro` IPC.
+- **Forecast card** (`ForecastWidget.qml`, background widgets): wttr.in j1
+  already carries 3 days — Weather service keeps them now (midday code,
+  min/max). Draggable, enabled by default, right-middle.
+- **StandBy** (`modules/ii/standby/`): idle night panel via `IdleMonitor`
+  (Quickshell.Wayland ext-idle-notify; respectInhibitors). 3 min → dim veil,
+  huge clock + date + NotchMediaRow; click-through, unmaps when inactive,
+  off while locked. Timeline with hypridle: 3' StandBy → 5' lock.
+
 **2026-07-17: notch morph pack + adaptive accent — cb21d80.** Wallpaper-adaptive
 `IslandStyle.accent` (Material colPrimary, fallback #8AB4F8) re-tints rings/
 dock dots/equalizer on wallpaper change. Three transient morphs through the
