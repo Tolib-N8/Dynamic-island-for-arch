@@ -79,6 +79,7 @@ Scope {
         function power(): void { Island.toggle("power", root.focusedScreenName()); }
         function wallpapers(): void { Island.toggle("wallpapers", root.focusedScreenName()); }
         function close(): void { Island.close(); }
+        function morph(name: string): void { root.morphAll(name, 2800); }
         // Clipboard history (Meta+V). Second invocation closes.
         function clipboard(): void {
             if (Island.openSurface === "dashboard") {
@@ -90,6 +91,29 @@ Scope {
             }
         }
     }
+
+    // Broadcast a transient morph to every monitor's notch (BT connects,
+    // charging, the `island morph` IPC verb).
+    signal morphAll(string src, int ms)
+
+    // BT device-connected morph: diff the connected-address set; the freshly
+    // connected device is shown AirPods-style (icon · name · battery).
+    property var btMorphDevice: null
+    property var _btAddrs: []
+    readonly property var _btConnectedNow: BluetoothStatus.connectedDevices
+    on_BtConnectedNowChanged: {
+        const now = _btConnectedNow.map(d => d.address);
+        const fresh = now.filter(a => root._btAddrs.indexOf(a) === -1);
+        // Ignore the initial adopt (service just came up with devices already on).
+        if (fresh.length > 0 && root._btAddrs.length + fresh.length === now.length && root._started) {
+            root.btMorphDevice = root._btConnectedNow.find(d => d.address === fresh[0]) ?? null;
+            if (root.btMorphDevice)
+                root.morphAll("btdevice", 3200);
+        }
+        root._btAddrs = now;
+    }
+    property bool _started: false
+    Timer { interval: 3000; running: true; onTriggered: root._started = true }
 
     // While locked the notch stays visible (layer rule above_lock) but is
     // reduced to "Locked" + the media row — close anything that was open.
@@ -198,6 +222,29 @@ Scope {
                 hideTimer.restart();
             }
 
+            Connections {
+                target: root
+                function onMorphAll(src, ms) {
+                    notchWindow.trigger(src, ms);
+                }
+            }
+            // Plug / unplug the charger -> brief bolt + percentage morph.
+            Connections {
+                target: Battery
+                function onIsPluggedInChanged() {
+                    if (Battery.available)
+                        notchWindow.trigger("charging", 2500);
+                }
+            }
+            // Freshly unlocked -> a short welcome.
+            Connections {
+                target: GlobalStates
+                function onScreenLockedChanged() {
+                    if (!GlobalStates.screenLocked)
+                        notchWindow.trigger("welcome", 2600);
+                }
+            }
+
             property string notifApp: ""
             property string notifSummary: ""
             property string notifIcon: ""
@@ -296,6 +343,12 @@ Scope {
                     return assistantUI.implicitWidth;
                 case "locked":
                     return lockUI.implicitWidth;
+                case "charging":
+                    return chargingUI.implicitWidth;
+                case "btdevice":
+                    return btUI.implicitWidth;
+                case "welcome":
+                    return welcomeUI.implicitWidth;
                 default:
                     return 0;
                 }
@@ -610,6 +663,88 @@ Scope {
                             font.pixelSize: Appearance.font.pixelSize.small
                             color: IslandStyle.textColor
                         }
+                    }
+                }
+
+                // ---- charging: bolt + percentage (plug/unplug morph) ----
+                RowLayout {
+                    id: chargingUI
+                    anchors.centerIn: parent
+                    spacing: 9
+                    opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "charging" ? 1 : 0
+                    visible: opacity > 0
+                    Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+
+                    MaterialSymbol {
+                        text: Battery.isPluggedIn ? "bolt" : "battery_android_full"
+                        fill: 1
+                        iconSize: 20
+                        color: Battery.isPluggedIn ? "#7EE787" : IslandStyle.textColor
+                    }
+                    StyledText {
+                        text: `${Math.round(Battery.percentage * 100)}%`
+                        font.pixelSize: Appearance.font.pixelSize.small
+                        font.weight: Font.DemiBold
+                        color: IslandStyle.textColor
+                    }
+                    StyledText {
+                        text: Battery.isPluggedIn ? Translation.tr("Charging") : Translation.tr("On battery")
+                        font.pixelSize: Appearance.font.pixelSize.small
+                        color: IslandStyle.subtextColor
+                    }
+                }
+
+                // ---- btdevice: freshly connected device, AirPods-style ----
+                RowLayout {
+                    id: btUI
+                    anchors.centerIn: parent
+                    spacing: 9
+                    opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "btdevice" ? 1 : 0
+                    visible: opacity > 0
+                    Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+
+                    MaterialSymbol {
+                        text: Icons.getBluetoothDeviceMaterialSymbol(root.btMorphDevice?.icon ?? "")
+                        fill: 1
+                        iconSize: 19
+                        color: IslandStyle.accent
+                    }
+                    StyledText {
+                        Layout.maximumWidth: 190
+                        text: root.btMorphDevice?.name ?? ""
+                        font.pixelSize: Appearance.font.pixelSize.small
+                        font.weight: Font.DemiBold
+                        color: IslandStyle.textColor
+                        elide: Text.ElideRight
+                    }
+                    StyledText {
+                        visible: root.btMorphDevice?.batteryAvailable ?? false
+                        text: `${Math.round((root.btMorphDevice?.battery ?? 0) * 100)}%`
+                        font.pixelSize: Appearance.font.pixelSize.small
+                        color: IslandStyle.subtextColor
+                    }
+                }
+
+                // ---- welcome: short greeting after unlocking ----
+                RowLayout {
+                    id: welcomeUI
+                    anchors.centerIn: parent
+                    spacing: 9
+                    opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "welcome" ? 1 : 0
+                    visible: opacity > 0
+                    Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+
+                    MaterialSymbol {
+                        text: "waving_hand"
+                        fill: 1
+                        iconSize: 19
+                        color: IslandStyle.accent
+                    }
+                    StyledText {
+                        text: `${Translation.tr("Welcome back")}, ${SystemInfo.username}`
+                        font.pixelSize: Appearance.font.pixelSize.small
+                        font.weight: Font.DemiBold
+                        color: IslandStyle.textColor
                     }
                 }
 

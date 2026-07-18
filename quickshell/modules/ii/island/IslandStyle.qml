@@ -23,6 +23,8 @@ Singleton {
     // Content colors
     readonly property color textColor: "#FFFFFF"        // primary text / used indicators
     readonly property color subtextColor: "#9AA0AA"     // secondary text
-    readonly property color accent: "#8AB4F8"           // blue tint (current workspace, highlights)
+    // Wallpaper-adaptive accent (Material primary from the current theme);
+    // falls back to the original blue before the palette is generated.
+    readonly property color accent: Appearance.colors?.colPrimary ?? "#8AB4F8"
     readonly property real inactiveOpacity: 0.45        // unused / dim elements
 }
