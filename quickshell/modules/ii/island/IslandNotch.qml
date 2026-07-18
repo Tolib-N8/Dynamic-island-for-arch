@@ -882,6 +882,57 @@ Scope {
                     }
                 }
 
+                // ---- privacy dots (macOS-style): mic = orange, screencast = green ----
+                Row {
+                    id: privacyDots
+                    anchors.right: parent.right
+                    anchors.rightMargin: 12
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 5
+                    visible: notchWindow.islandState !== "open" && (PrivacyIndicators.micActive || PrivacyIndicators.screensharing)
+
+                    HoverHandler { id: privacyHover }
+
+                    Rectangle {
+                        visible: PrivacyIndicators.micActive
+                        width: 7
+                        height: 7
+                        radius: 3.5
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: "#FF9F0A"
+                    }
+                    Rectangle {
+                        visible: PrivacyIndicators.screensharing
+                        width: 7
+                        height: 7
+                        radius: 3.5
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: "#32D74B"
+                    }
+
+                    IslandPopup {
+                        anchorItem: privacyDots
+                        shouldShow: privacyHover.hovered
+                        contentComponent: Component {
+                            Column {
+                                spacing: 4
+                                StyledText {
+                                    visible: PrivacyIndicators.micActive
+                                    text: Translation.tr("Microphone:") + " " + PrivacyIndicators.micApps.join(", ")
+                                    font.pixelSize: Appearance.font.pixelSize.smaller
+                                    color: "#FF9F0A"
+                                }
+                                StyledText {
+                                    visible: PrivacyIndicators.screensharing
+                                    text: Translation.tr("Screen is being shared")
+                                    font.pixelSize: Appearance.font.pixelSize.smaller
+                                    color: "#32D74B"
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // ---- open-state surface host (dashboard / power / tools / launcher / overview) ----
                 FocusScope {
                     id: surfaceHost
