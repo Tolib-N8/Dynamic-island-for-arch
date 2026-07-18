@@ -4,7 +4,6 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
-import qs.modules.ii.wallpaperSelector
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
@@ -50,7 +49,7 @@ Scope {
             "power":     { "w": 320,  "h": 92  },
             "tools":     { "w": 440,  "h": 84  },
             "agent":     { "w": 460,  "h": 300 },
-            "wallpapers": { "w": 1200, "h": 620 }
+            "wallpapers": { "w": 1200, "h": 250 }
         })
 
     // Media (shared across monitors). Show only while actively playing.
@@ -984,7 +983,7 @@ Scope {
                     Component { id: launcherComp; LauncherSurface { focus: true } }
                     Component { id: overviewComp; OverviewSurface { focus: true } }
                     Component { id: agentComp; AgentSurface { focus: true } }
-                    Component { id: wallpapersComp; WallpaperSelectorContent { focus: true; onDismissed: Island.close() } }
+                    Component { id: wallpapersComp; IslandWallpaperStrip { focus: true } }
                 }
             }
         }
