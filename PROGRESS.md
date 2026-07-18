@@ -7,6 +7,21 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-19 (night): privacy dots + Game Mode.**
+- Privacy dots in the notch: orange = mic in use (pactl subscribe +
+  `--format=json list source-outputs`; monitor-capture streams and cava
+  filtered — NOTE cava's stream is NOT on a .monitor source here, the name
+  filter is what catches it), green = screencast (Hyprland `screencast` raw
+  event). Hover popup lists mic holders. Verified live with parecord.
+- GameMode service + 6th chip: ON = hl.config eval kills animations/blur/
+  shadows + performance profile + Caffeine; OFF = hyprctl reload (restores
+  look) + балансный профиль + re-assert of Auto Tile's float rule (reload
+  wipes Lua state). Toggle row is now a 3×2 GridLayout — six chips fit.
+- Weather pinned to Tashkent (bar.weather.city, enableGPS=false — geoclue
+  placed the user in Kokand). Workspace dots freeze fixed: depend on
+  Hyprland.monitors.values + clean shell restart (wedged event stream after
+  days of hot reloads).
+
 **2026-07-19: visual+functional pack (4 features).**
 - **Breathing window border**: matugen template
   (`~/.config/matugen/templates/hyprland/colors.lua`) now emits a
