@@ -37,7 +37,8 @@ Scope {
     PanelLoader { component: Lock {} }
     PanelLoader { component: StandbyScreen {} }
     PanelLoader { component: MediaControls {} }
-    PanelLoader { component: NotificationPopup {} }
+    // Notifications morph in the notch — the stock popup would double them.
+    // PanelLoader { component: NotificationPopup {} }
     // PanelLoader { component: OnScreenDisplay {} }
     PanelLoader { component: OnScreenKeyboard {} }
     PanelLoader { component: Overlay {} }
