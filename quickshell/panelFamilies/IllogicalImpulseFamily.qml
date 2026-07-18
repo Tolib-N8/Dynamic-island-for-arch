@@ -8,6 +8,7 @@ import qs.modules.ii.island
 import qs.modules.ii.cheatsheet
 import qs.modules.ii.dock
 import qs.modules.ii.lock
+import qs.modules.ii.standby
 import qs.modules.ii.mediaControls
 import qs.modules.ii.notificationPopup
 import qs.modules.ii.onScreenDisplay
@@ -34,6 +35,7 @@ Scope {
     PanelLoader { component: Cheatsheet {} }
     PanelLoader { extraCondition: Config.options.dock.enable; component: Dock {} }
     PanelLoader { component: Lock {} }
+    PanelLoader { component: StandbyScreen {} }
     PanelLoader { component: MediaControls {} }
     PanelLoader { component: NotificationPopup {} }
     // PanelLoader { component: OnScreenDisplay {} }
