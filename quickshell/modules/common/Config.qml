@@ -209,6 +209,13 @@ Singleton {
                         property real x: 400
                         property real y: 100
                     }
+                    property JsonObject forecast: JsonObject {
+                        property bool enable: true
+                        property bool showOnlyWhenLocked: false
+                        property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
+                        property real x: 1160
+                        property real y: 400
+                    }
                 }
                 property string wallpaperPath: ""
                 property string thumbnailPath: ""

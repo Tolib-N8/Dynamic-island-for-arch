@@ -44,6 +44,7 @@ Singleton {
         temp: 0,
         tempFeelsLike: 0,
         lastRefresh: 0,
+        forecast: [],
     })
 
     function refineData(data) {
@@ -77,6 +78,13 @@ Singleton {
             temp.tempFeelsLike += "°C";
         }
         temp.lastRefresh = DateTime.time + " • " + DateTime.date;
+        // 3-day forecast (midday weather code per day)
+        temp.forecast = (data?.days ?? []).map(d => ({
+            date: d.date,
+            max: root.useUSCS ? d.maxF : d.maxC,
+            min: root.useUSCS ? d.minF : d.minC,
+            wCode: d.code
+        }));
         root.data = temp;
     }
 
@@ -93,7 +101,7 @@ Singleton {
         command += "?format=j1";
         command += " | ";
         // only take the current weather, location, asytronmy data
-        command += "jq '{current: .current_condition[0], location: .nearest_area[0], astronomy: .weather[0].astronomy[0]}'";
+        command += "jq '{current: .current_condition[0], location: .nearest_area[0], astronomy: .weather[0].astronomy[0], days: [.weather[] | {date: .date, maxC: .maxtempC, minC: .mintempC, maxF: .maxtempF, minF: .mintempF, code: .hourly[4].weatherCode}]}'";
         fetcher.command[2] = command;
         fetcher.running = true;
     }

@@ -255,6 +255,17 @@ Variants {
                 }
 
                 FadeLoader {
+                    shown: Config.options.background.widgets.forecast.enable
+                    sourceComponent: ForecastWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: 1
+                    }
+                }
+
+                FadeLoader {
                     shown: Config.options.background.widgets.weather.enable
                     sourceComponent: WeatherWidget {
                         screenWidth: bgRoot.screen.width
