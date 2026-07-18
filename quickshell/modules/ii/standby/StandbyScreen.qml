@@ -21,7 +21,9 @@ Scope {
         id: idle
         enabled: (Config.options?.standby.enable ?? true) && !GlobalStates.screenLocked
         timeout: (Config.options?.standby.timeoutMinutes ?? 3) * 60
-        respectInhibitors: true   // Caffeine / video playback keeps it away
+        // Video playback / Caffeine hold idle inhibitors — StandBy must not
+        // interrupt a movie. (Verified: with this false it does.)
+        respectInhibitors: true
     }
 
     Variants {
