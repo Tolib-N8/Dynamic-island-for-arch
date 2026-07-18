@@ -7,6 +7,19 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-19 (late): own wallpaper picker + lock layout fix.**
+- `IslandWallpaperStrip` — iOS-style filmstrip on the wallpapers surface
+  (1200×250, replaces embedded WallpaperSelectorContent): centre-snapped
+  ListView (StrictlyEnforceRange + preferredHighlight window), distance-based
+  scale/dim, accent border on the centred cell, wheel/click navigation,
+  opens on Config.options.background.wallpaperPath, apply→switchwall→close,
+  shuffle. Async Image with sourceSize 420 as thumbnails.
+- Lock screen forces layout[0] (us) on all keyboards at lock
+  (`hyprctl switchxkblayout` is NOT lua-intercepted) and restores the
+  pre-lock layout index after unlock.
+- Privacy dots got their own 26px zone (notch widens while lit; the
+  edge-anchored agent row needed a matching rightMargin — centred rows don't).
+
 **2026-07-19 (night): privacy dots + Game Mode.**
 - Privacy dots in the notch: orange = mic in use (pactl subscribe +
   `--format=json list source-outputs`; monitor-capture streams and cava
