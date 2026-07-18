@@ -360,9 +360,12 @@ Scope {
             // Dashboard's Agents tab holds far less content than the widget tabs —
             // shrink the body to it (the size Behaviors animate the morph).
             readonly property bool dashboardCompact: Island.openSurface === "dashboard" && Island.dashboardCurrentTab === 3
+            // Extra right-side room while the privacy dots are lit, so they sit
+            // in clean space instead of over the content's right edge.
+            readonly property real privacyPad: (PrivacyIndicators.micActive || PrivacyIndicators.screensharing) ? 26 : 0
             property real targetWidth: islandState === "open" ? (dashboardCompact ? 640 : (root.surfaceSizes[Island.openSurface]?.w ?? root.maxWidth))
-                : islandState === "expanded" ? (displaySource === "agent" ? (root.mediaActive ? 264 : 224) : Math.min(root.expandedMaxWidth, contentWidth + 36))
-                : 180
+                : islandState === "expanded" ? ((displaySource === "agent" ? (root.mediaActive ? 264 : 224) : Math.min(root.expandedMaxWidth, contentWidth + 36)) + privacyPad)
+                : 180 + privacyPad
             property real targetHeight: islandState === "open" ? (dashboardCompact ? 300 : (root.surfaceSizes[Island.openSurface]?.h ?? root.maxHeight))
                 : islandState === "expanded" ? (
                     displaySource === "assistant" ? Math.max(44, assistantUI.implicitHeight + 26) // 13 top + 13 bottom
@@ -817,7 +820,7 @@ Scope {
                     id: agentUI
                     anchors.fill: parent
                     anchors.leftMargin: 16   // breathing room to the LEFT of the mascot
-                    anchors.rightMargin: 14
+                    anchors.rightMargin: 14 + notchWindow.privacyPad // dots get their own zone
                     spacing: 11              // gap between the mascot cluster and the text area
                     opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "agent" ? 1 : 0
                     visible: opacity > 0
