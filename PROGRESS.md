@@ -7,6 +7,16 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-17: notch morph pack + adaptive accent — cb21d80.** Wallpaper-adaptive
+`IslandStyle.accent` (Material colPrimary, fallback #8AB4F8) re-tints rings/
+dock dots/equalizer on wallpaper change. Three transient morphs through the
+existing trigger/expandedSource machinery: `charging` (Battery.isPluggedIn
+change; green bolt + %), `btdevice` (diff of BluetoothStatus.connectedDevices
+addresses, 3s startup grace; icon/name/battery), `welcome` (screenLocked
+false edge; waving hand + username). `island morph NAME` IPC fires any morph
+for testing/keybinds. Verified welcome+charging visually via IPC; btdevice
+awaits a real headphone connect.
+
 **2026-07-16 (later): lock blink killed — USER-VERIFIED.** Two layers:
 (1) async Loader for the lock-surface content — building LockSurface
 synchronously delayed the first lock-surface frame, and Hyprland paints a
