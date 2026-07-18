@@ -5,6 +5,7 @@ import Quickshell.Wayland
 import qs
 import qs.services
 import qs.modules.common
+import qs.modules.common.functions
 import qs.modules.common.widgets
 import qs.modules.ii.island
 
@@ -74,11 +75,42 @@ Scope {
                         }
                         color: Qt.rgba(1, 1, 1, 0.85)
                     }
+                    // Full localized date — "суббота, 19 июля"-style
                     StyledText {
                         Layout.alignment: Qt.AlignHCenter
-                        text: DateTime.longDate
-                        font.pixelSize: Appearance.font.pixelSize.huge
-                        color: Qt.rgba(1, 1, 1, 0.40)
+                        text: Qt.locale().toString(DateTime.clock.date, "dddd, d MMMM")
+                        font {
+                            family: Appearance.font.family.expressive
+                            pixelSize: Appearance.font.pixelSize.huge
+                            weight: Font.Medium
+                        }
+                        color: Qt.rgba(1, 1, 1, 0.45)
+                    }
+
+                    // Weather: icon · temperature · city, accent-tinted
+                    RowLayout {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: 6
+                        spacing: 8
+                        visible: (Weather.data?.temp ?? 0) !== 0
+
+                        MaterialSymbol {
+                            text: Icons.getWeatherIcon(Weather.data?.wCode ?? "113") ?? "cloud"
+                            fill: 1
+                            iconSize: 26
+                            color: ColorUtils.transparentize(IslandStyle.accent, 0.15)
+                        }
+                        StyledText {
+                            text: Weather.data?.temp ?? ""
+                            font.pixelSize: Appearance.font.pixelSize.larger
+                            font.weight: Font.DemiBold
+                            color: Qt.rgba(1, 1, 1, 0.65)
+                        }
+                        StyledText {
+                            text: Weather.data?.city ?? ""
+                            font.pixelSize: Appearance.font.pixelSize.larger
+                            color: Qt.rgba(1, 1, 1, 0.35)
+                        }
                     }
 
                     NotchMediaRow {
