@@ -386,7 +386,13 @@ Scope {
                     }
                     // Click → dashboard (calendar + notifications).
                     TapHandler {
+                        acceptedButtons: Qt.LeftButton
                         onTapped: Island.toggle("dashboard", islandWindow.screen.name)
+                    }
+                    // Right-click → pomodoro focus timer (countdown lives in the notch).
+                    TapHandler {
+                        acceptedButtons: Qt.RightButton
+                        onTapped: Pomodoro.toggle()
                     }
                 }
 

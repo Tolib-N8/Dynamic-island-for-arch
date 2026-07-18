@@ -80,6 +80,7 @@ Scope {
         function wallpapers(): void { Island.toggle("wallpapers", root.focusedScreenName()); }
         function close(): void { Island.close(); }
         function morph(name: string): void { root.morphAll(name, 2800); }
+        function pomodoro(): void { Pomodoro.toggle(); }
         // Clipboard history (Meta+V). Second invocation closes.
         function clipboard(): void {
             if (Island.openSurface === "dashboard") {
@@ -205,8 +206,9 @@ Scope {
             property string displaySource: GlobalStates.screenLocked ? (root.mediaActive ? "media" : "locked")
                 : VoiceAssistant.active ? "assistant"
                 : (expandedSource !== "" ? expandedSource
+                : (Pomodoro.running ? "pomodoro"
                 : (AgentService.active ? "agent"
-                : (root.mediaActive ? "media" : "")))
+                : (root.mediaActive ? "media" : ""))))
             // open (a named surface is up ON THIS MONITOR) outranks transient OSDs,
             // which outrank idle.
             property string islandState: notchWindow.ownsOpen ? "open"
@@ -349,6 +351,8 @@ Scope {
                     return btUI.implicitWidth;
                 case "welcome":
                     return welcomeUI.implicitWidth;
+                case "pomodoro":
+                    return pomodoroUI.implicitWidth;
                 default:
                     return 0;
                 }
@@ -362,7 +366,7 @@ Scope {
             property real targetHeight: islandState === "open" ? (dashboardCompact ? 300 : (root.surfaceSizes[Island.openSurface]?.h ?? root.maxHeight))
                 : islandState === "expanded" ? (
                     displaySource === "assistant" ? Math.max(44, assistantUI.implicitHeight + 26) // 13 top + 13 bottom
-                    : (displaySource === "media" || displaySource === "agent" || displaySource === "locked" ? 40 : 54))
+                    : (displaySource === "media" || displaySource === "agent" || displaySource === "locked" || displaySource === "pomodoro" ? 40 : 54))
                 : 36
 
             // Full-screen click-catcher (only while open). Sits BEHIND the notch
@@ -745,6 +749,34 @@ Scope {
                         font.pixelSize: Appearance.font.pixelSize.small
                         font.weight: Font.DemiBold
                         color: IslandStyle.textColor
+                    }
+                }
+
+                // ---- pomodoro: countdown while the focus timer runs ----
+                RowLayout {
+                    id: pomodoroUI
+                    anchors.centerIn: parent
+                    spacing: 9
+                    opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "pomodoro" ? 1 : 0
+                    visible: opacity > 0
+                    Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+
+                    MaterialSymbol {
+                        text: Pomodoro.phase === "work" ? "timer" : "coffee"
+                        fill: 1
+                        iconSize: 19
+                        color: Pomodoro.phase === "work" ? IslandStyle.accent : "#7EE787"
+                    }
+                    StyledText {
+                        text: Pomodoro.display
+                        font.pixelSize: Appearance.font.pixelSize.normal
+                        font.weight: Font.DemiBold
+                        color: IslandStyle.textColor
+                    }
+                    StyledText {
+                        text: Pomodoro.phase === "work" ? Translation.tr("Focus") : Translation.tr("Break")
+                        font.pixelSize: Appearance.font.pixelSize.small
+                        color: IslandStyle.subtextColor
                     }
                 }
 
