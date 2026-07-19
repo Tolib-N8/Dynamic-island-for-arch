@@ -32,6 +32,7 @@ ShellRoot {
         Updates.load()
         AgentService.load()   // start the Claude Code agent bridge listener
         WindowTiling.autoTile = true  // wake the lazy singleton so its `tiling` IPC works pre-dashboard
+        Idle.wake()               // wake Caffeine so its inhibitor + `idle` IPC exist pre-dashboard
     }
 
 

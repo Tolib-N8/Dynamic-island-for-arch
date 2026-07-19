@@ -14,15 +14,25 @@ Singleton {
     property alias inhibit: idleInhibitor.enabled
     inhibit: false
 
+    // No-op used by shell.qml to instantiate this lazy singleton at startup —
+    // otherwise the inhibitor and the `idle` IPC only exist after the widgets
+    // pane is first opened.
+    function wake() {}
+
+    function restoreFromPersistent() {
+        if (!Persistent.isNewHyprlandInstance) {
+            root.inhibit = Persistent.states.idle.inhibit;
+        } else {
+            Persistent.states.idle.inhibit = root.inhibit;
+        }
+    }
+
+    // Persistent may already be ready by the time this singleton instantiates
+    // (it's lazy) — handle both orders.
+    Component.onCompleted: if (Persistent.ready) restoreFromPersistent()
     Connections {
         target: Persistent
-        function onReadyChanged() {
-            if (!Persistent.isNewHyprlandInstance) {
-                root.inhibit = Persistent.states.idle.inhibit;
-            } else {
-                Persistent.states.idle.inhibit = root.inhibit;
-            }
-        }
+        function onReadyChanged() { root.restoreFromPersistent(); }
     }
 
     function toggleInhibit(active = null) {
@@ -43,6 +53,12 @@ Singleton {
         command: ["kde-inhibit", "--power", "--screenSaver", "cat"]
         stdinEnabled: true
         running: !root.onHyprland && root.inhibit
+    }
+
+    IpcHandler {
+        target: "idle"
+        function toggleInhibit(): void { root.toggleInhibit(); }
+        function status(): string { return root.inhibit ? "on" : "off"; }
     }
 
     IdleInhibitor {

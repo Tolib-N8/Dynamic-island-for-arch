@@ -7,6 +7,25 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-19 (late+): Caffeine fixed — lazy-singleton reset.**
+- User report "caffeine не работает". Diagnosis: the Wayland idle-inhibit
+  chain itself is fine — verified end-to-end with a differential test (two
+  IdleMonitors respectInhibitors true/false via `qs -p` scratch config, plus
+  a temporary 20s hypridle listener: IGNORE monitor fired, RESPECT and
+  hypridle did not → Hyprland honours the inhibitor and hypridle inherits it).
+- The real bugs: (1) `Idle` is a lazy singleton — it only instantiated when
+  the widgets pane first opened, so after every shell restart Caffeine
+  silently reset to OFF; worse, by then `Persistent.onReadyChanged` had
+  already fired, so the persisted state was NEVER restored. Fix: `Idle.wake()`
+  in shell.qml startup + `Component.onCompleted: if (Persistent.ready)
+  restoreFromPersistent()` to handle both init orders. (2) Game Mode OFF
+  unconditionally killed Caffeine — now saves/restores `priorInhibit`.
+- New `idle` IPC: `qs -c openagentisland ipc call idle status|toggleInhibit`
+  (round-trip verified live). Handy for keybinds/scripts too.
+- Gotcha: lazy singletons + Persistent restore race — any service that
+  restores state from Persistent must handle "Persistent already ready at
+  instantiation" or waking it late silently loses state.
+
 **2026-07-19 (late): own wallpaper picker + lock layout fix.**
 - `IslandWallpaperStrip` — iOS-style filmstrip on the wallpapers surface
   (1200×250, replaces embedded WallpaperSelectorContent): centre-snapped

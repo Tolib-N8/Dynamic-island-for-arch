@@ -17,9 +17,13 @@ Singleton {
     id: root
 
     property bool on: false
+    // Caffeine state the user had before Game Mode grabbed it — restored on
+    // exit instead of unconditionally switching it off.
+    property bool priorInhibit: false
 
     onOnChanged: {
         if (root.on) {
+            root.priorInhibit = Idle.inhibit;
             Quickshell.execDetached(["hyprctl", "eval",
                 "hl.config({animations={enabled=false}, decoration={blur={enabled=false}, shadow={enabled=false}}})"]);
             Quickshell.execDetached(["powerprofilesctl", "set", "performance"]);
@@ -27,7 +31,7 @@ Singleton {
         } else {
             Quickshell.execDetached(["hyprctl", "reload"]);
             Quickshell.execDetached(["powerprofilesctl", "set", "balanced"]);
-            Idle.toggleInhibit(false);
+            Idle.toggleInhibit(root.priorInhibit);
             reassertTimer.restart();
         }
     }
