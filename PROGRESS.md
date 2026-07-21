@@ -7,6 +7,29 @@ lives in `NOTES.md`.
 
 ## Current phase & status
 
+**2026-07-21: Hyprland 0.56 upgrade fallout + layout morph.**
+- Hyprland 0.55.4 → 0.56.0 broke ALL plugins (ABI): `hl.plugin.gloview` nil →
+  user's custom/keybinds.lua died at line 5 → every bind below (Super+Alt+T,
+  Ctrl+Super+T) silently unregistered. Fixed: gloview binds wrapped in
+  `if hl.plugin.gloview then ... end` guard + reload. GOTCHA: one bad line in
+  a custom/*.lua kills the whole require — guard anything plugin-dependent.
+- PENDING (needs sudo, user was away): gloview rebuilt OK against 0.56 but
+  not installed. Run:
+  `sudo pacman -U ~/.cache/yay/gloview-git/gloview-git-0.3.0.r15.590c190-1-x86_64.pkg.tar.zst`
+  then `hyprctl reload` (plugin loads, Super+Tab overview returns). Also
+  `hyprpm update` for scrolloverview (currently not loaded either).
+- Notch layout morph shipped (d28c382): ⌨ EN/RU flash 1.4s on activelayout;
+  muted while locked/engaging + 3s after unlock (lock force-switches layouts).
+  Verified via `island morph layout` IPC screenshot; real-switch path verified
+  events flow (socat) — full visual check pending user.
+- OPEN QUESTION: screen locked ~07:11 with Caffeine on — manual Super+L or
+  timeout? If timeout: suspect Wayland inhibitor dies after qs hot reload;
+  plan = differential IdleMonitor test right after a forced reload, and/or
+  belt-and-braces systemd-inhibit process alongside (hypridle honours dbus/
+  systemd inhibits by default). Ask the user.
+- GOTCHA: ps lstart/uptime -s times are skewed after suspend (btime jump) —
+  don't trust process start-time archaeology on this box.
+
 **2026-07-19 (late+): Caffeine fixed — lazy-singleton reset.**
 - User report "caffeine не работает". Diagnosis: the Wayland idle-inhibit
   chain itself is fine — verified end-to-end with a differential test (two
