@@ -115,6 +115,23 @@ Scope {
     property bool _started: false
     Timer { interval: 3000; running: true; onTriggered: root._started = true }
 
+    // Keyboard-layout morph: flash EN/RU when the layout switches. Muted while
+    // locked/engaging and for a few seconds after unlock — the lock screen
+    // force-switches to us and restores the pre-lock layout right after
+    // unlock, and neither of those is a user action (also keeps the welcome
+    // morph from being stomped).
+    property double _unlockedAt: 0
+    Connections {
+        target: HyprlandXkb
+        function onCurrentLayoutNameChanged() {
+            if (!root._started || GlobalStates.screenLocked || GlobalStates.lockEngaging)
+                return;
+            if (Date.now() - root._unlockedAt < 3000)
+                return;
+            root.morphAll("layout", 1400);
+        }
+    }
+
     // While locked the notch stays visible (layer rule above_lock) but is
     // reduced to "Locked" + the media row — close anything that was open.
     Connections {
@@ -122,6 +139,8 @@ Scope {
         function onScreenLockedChanged() {
             if (GlobalStates.screenLocked)
                 Island.close();
+            else
+                root._unlockedAt = Date.now();
         }
     }
 
@@ -355,6 +374,8 @@ Scope {
                     return btUI.implicitWidth;
                 case "welcome":
                     return welcomeUI.implicitWidth;
+                case "layout":
+                    return layoutUI.implicitWidth;
                 case "pomodoro":
                     return pomodoroUI.implicitWidth;
                 default:
@@ -756,6 +777,39 @@ Scope {
                         font.pixelSize: Appearance.font.pixelSize.small
                         font.weight: Font.DemiBold
                         color: IslandStyle.textColor
+                    }
+                }
+
+                // ---- layout: keyboard layout switched (EN ⇄ RU) ----
+                RowLayout {
+                    id: layoutUI
+                    anchors.centerIn: parent
+                    spacing: 9
+                    opacity: notchWindow.islandState === "expanded" && notchWindow.displaySource === "layout" ? 1 : 0
+                    visible: opacity > 0
+                    Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+
+                    MaterialSymbol {
+                        text: "keyboard"
+                        fill: 1
+                        iconSize: 19
+                        color: IslandStyle.accent
+                    }
+                    StyledText {
+                        // Short code, loud: EN / RU. Falls back to the name
+                        // while the code lookup hasn't resolved yet.
+                        text: (HyprlandXkb.currentLayoutCode !== "" ? HyprlandXkb.currentLayoutCode.slice(0, 2)
+                            : HyprlandXkb.currentLayoutName.slice(0, 2)).toUpperCase()
+                        font.pixelSize: Appearance.font.pixelSize.normal
+                        font.weight: Font.Bold
+                        color: IslandStyle.textColor
+                    }
+                    StyledText {
+                        Layout.maximumWidth: 170
+                        text: HyprlandXkb.currentLayoutName
+                        font.pixelSize: Appearance.font.pixelSize.small
+                        color: IslandStyle.subtextColor
+                        elide: Text.ElideRight
                     }
                 }
 
